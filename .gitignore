@@ -1,0 +1,6 @@
+.idea
+Bin/*
+cmake-build-debug-mingwx64
+cmake-build-debug-mingwx86
+cmake-build-release-mingwx64
+cmake-build-release-mingwx86
