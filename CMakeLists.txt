@@ -34,7 +34,13 @@ set(LIB_BIN_NAME "Renderer")
 # Добавляем .dll (проект в Visual Studio)
 add_library(${LIB_NAME} SHARED
         Sources/Renderer/Renderer.h
-        Sources/Renderer/Renderer.cpp)
+        Sources/Renderer/Renderer.cpp
+        Sources/Renderer/FrameBuffer.cpp
+        Sources/Renderer/FrameBuffer.h
+        Sources/Renderer/ShaderProgram.cpp
+        Sources/Renderer/ShaderProgram.h
+        Sources/Renderer/GeometryBuffer.cpp
+        Sources/Renderer/GeometryBuffer.h)
 
 # Добавляем символ RENDERER_LIB_EXPORTS для экспорта функций
 target_compile_definitions(${LIB_NAME} PUBLIC RENDERER_LIB_EXPORTS)
@@ -53,6 +59,13 @@ set_property(TARGET ${LIB_NAME} PROPERTY PREFIX "")
 set_property(TARGET ${LIB_NAME} PROPERTY IMPORT_PREFIX "")
 set_property(TARGET ${LIB_NAME} PROPERTY SUFFIX ".dll")
 set_property(TARGET ${LIB_NAME} PROPERTY IMPORT_SUFFIX ".lib")
+
+# Статическая линковка рантайма и стандартных библиотек
+if(MSVC)
+    set_property(TARGET ${LIB_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    set_property(TARGET ${LIB_NAME} PROPERTY LINK_FLAGS "-Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive")
+endif()
 
 # Линковка OpenGL и GLEW с библиотекой
 target_link_libraries(${LIB_NAME} glew32.lib Opengl32)

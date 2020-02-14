@@ -53,12 +53,10 @@ int main(int argc, char* argv[])
 
         // Получение контекста отрисовки
         _hdc = GetDC(_hwnd);
+        // Создание контекста OpenGL
         _hglrc = win_tools::CreateOpenGlContext(_hdc);
 
-        // Проверка работоспособности либы
-        bool initialized = rtr::InitGlewLib();
-        if(initialized) std::cout << "GLEW is ready!" << std::endl;
-        else std::cout << "GLEW initialization error" << std::endl;
+        //TODO: какая-то инициализация рендерера
 
         // Оконное сообщение
         MSG msg = {};
@@ -75,6 +73,9 @@ int main(int argc, char* argv[])
                     break;
                 }
             }
+
+            //TODO: какая-то подготовка сцены
+            //TODO: какая-то работа с рендерером
         }
     }
     catch(std::exception& ex)
