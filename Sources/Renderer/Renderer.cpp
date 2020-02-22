@@ -51,21 +51,21 @@ namespace rtgl
             {
                 // Программа для стадии подготовки геометрии
                 _shaderPrograms[RS_GEOMETRY_PREPARE] = new ShaderProgram({
-                        {GL_VERTEX_SHADER,shaderSourcesBundle.geometryPrepareVS},
-                        {GL_GEOMETRY_SHADER,shaderSourcesBundle.geometryPrepareGS},
-                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.geometryPrepareFS}
+                        {GL_VERTEX_SHADER,shaderSourcesBundle.geometryPrepareVs},
+                        {GL_GEOMETRY_SHADER,shaderSourcesBundle.geometryPrepareGs},
+                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.geometryPrepareFs}
                 });
 
                 // Программа для стадии трассировки
                 _shaderPrograms[RS_RAY_TRACING] = new ShaderProgram({
-                        {GL_VERTEX_SHADER,shaderSourcesBundle.rayTracingVS},
-                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.rayTracingFS}
+                        {GL_VERTEX_SHADER,shaderSourcesBundle.rayTracingVs},
+                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.rayTracingFs}
                 });
 
                 // Программа для стадии пост-процессинга
                 _shaderPrograms[RS_POST_PROCESS] = new ShaderProgram({
-                        {GL_VERTEX_SHADER,shaderSourcesBundle.postProcessVS},
-                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.postProcessFS}
+                        {GL_VERTEX_SHADER,shaderSourcesBundle.postProcessVs},
+                        {GL_FRAGMENT_SHADER,shaderSourcesBundle.postProcessFs}
                 });
             }
 
@@ -87,11 +87,6 @@ namespace rtgl
                 //TODO: инициализация текстур по умолчанию
             }
 
-            /// Камера (установка камеры по умолчанию)
-            {
-                //TODO: настройка камеры
-            }
-
             /// Инициализация shader-storage-буферов
             {
                 //TODO: инициализация storage-буферов
@@ -110,6 +105,12 @@ namespace rtgl
                 if(_screenFrameBuffer->prepareBuffer({GL_COLOR_ATTACHMENT0})){
                     throw std::runtime_error("Can't initialize screen frame buffer");
                 }
+            }
+
+            /// Камера (установка камеры по умолчанию)
+            {
+                const auto aspectRatio = static_cast<GLfloat>(_screenWidth) / static_cast<GLfloat>(_screenHeight);
+                _camera = new Camera({0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},aspectRatio);
             }
 
             /// Основные OpenGL настройки по умолчанию

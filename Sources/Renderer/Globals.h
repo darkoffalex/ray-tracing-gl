@@ -8,9 +8,10 @@
 #include <string>
 #include <GL/glew.h>
 
-#include "FrameBuffer.h"
-#include "GeometryBuffer.h"
-#include "ShaderProgram.h"
+#include "Resources/FrameBuffer.h"
+#include "Resources/GeometryBuffer.h"
+#include "Resources/ShaderProgram.h"
+#include "Scene/Camera.h"
 
 namespace rtgl
 {
@@ -28,8 +29,11 @@ namespace rtgl
     GLsizei _screenWidth = 0;
     GLsizei _screenHeight = 0;
 
+    /// Основной класс камеры
+    Camera* _camera = nullptr;
+
     /// Оснвной кадровый буфер экрана
-    FrameBuffer* _screenFrameBuffer;
+    FrameBuffer* _screenFrameBuffer = nullptr;
 
     /// Шейдерные программы для каждого этапа
     ShaderProgram* _shaderPrograms[3] = {};

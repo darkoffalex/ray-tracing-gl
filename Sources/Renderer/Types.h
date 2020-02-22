@@ -21,6 +21,12 @@ namespace rtgl
     enum Axis { AXIS_X, AXIS_Y, AXIS_Z };
 
     /**
+     * Тип проекции
+     * Используется в классе камеры при построении матрицы проекции
+     */
+    enum ProjectionType { PROJ_PERSPECTIVE, PROJ_ORTHOGRAPHIC };
+
+    /**
      * Этапы рендеринга сцены (проходы)
      * Рендеринг состоит из нескольких отдельных этапов, у каждого может быть своя шейдерная программа
      */
@@ -35,17 +41,17 @@ namespace rtgl
     struct ShaderSourcesBundle
     {
         // Этап подготовки геометрии
-        const char* geometryPrepareVS = nullptr;
-        const char* geometryPrepareGS = nullptr;
-        const char* geometryPrepareFS = nullptr;
+        const char* geometryPrepareVs = nullptr;
+        const char* geometryPrepareGs = nullptr;
+        const char* geometryPrepareFs = nullptr;
 
         // Этап трасировки геометрии
-        const char* rayTracingVS = nullptr;
-        const char* rayTracingFS = nullptr;
+        const char* rayTracingVs = nullptr;
+        const char* rayTracingFs = nullptr;
 
         // Этап пост-процессинга
-        const char* postProcessVS = nullptr;
-        const char* postProcessFS = nullptr;
+        const char* postProcessVs = nullptr;
+        const char* postProcessFs = nullptr;
     };
 
     /**
@@ -68,9 +74,9 @@ namespace rtgl
     template <typename T = float>
     struct Vec3
     {
-        union { T x, r; };
-        union { T y, g; };
-        union { T z, b; };
+        union { public: T x, r; };
+        union { public: T y, g; };
+        union { public: T z, b; };
 
         Vec3():x(0.0f),y(0.0f),z(0.0f){};
         Vec3(const T& s1, const T& s2, const T& s3) :x(s1), y(s2), z(s3) {}
