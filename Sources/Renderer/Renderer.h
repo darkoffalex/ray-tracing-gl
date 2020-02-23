@@ -8,6 +8,7 @@
 #include "Types.h"
 #include "Interface/SceneElementInterface.h"
 #include "Interface/GeometryBufferInterface.h"
+#include "Interface/MeshInterface.h"
 
 namespace rtgl
 {
@@ -35,6 +36,29 @@ namespace rtgl
          */
         RENDERER_LIB_API void __cdecl DeInit();
 
+        /// К А М Е Р А
+
+        /**
+         * Установка параметров камеры
+         * @param position Положение
+         * @param orientation Ориентация
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl SetCameraSettings(const Vec3<float>& position, const Vec3<float>& orientation);
+
+        /**
+         * Установка положения камеры
+         * @param position Положение
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl SetCameraPosition(const Vec3<float>& position);
+
+        /**
+         * Установка ориентации камеры
+         * @param orientation Ориентация
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl SetCameraOrientation(const Vec3<float>& orientation);
     }
 }
 

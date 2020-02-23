@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #ifdef RENDERER_LIB_EXPORTS
 #define RENDERER_LIB_API __declspec(dllexport)
 #else

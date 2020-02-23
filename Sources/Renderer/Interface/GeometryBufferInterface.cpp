@@ -1,4 +1,10 @@
+/**
+ * С-интерфейс для взаимодействия с объектами класса геометрического буфера
+ * Copyright (C) 2020 by Alex "DarkWolf" Nem - https://github.com/darkoffalex
+ */
+
 #include "GeometryBufferInterface.h"
+#include "../Resources/GeometryBuffer.h"
 
 #include <stdexcept>
 #include <GL/gl.h>

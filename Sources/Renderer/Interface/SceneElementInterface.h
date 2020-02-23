@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "../Scene/SceneElement.h"
 #include "../Types.h"
 
 namespace rtgl

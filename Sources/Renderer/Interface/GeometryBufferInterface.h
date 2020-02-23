@@ -1,6 +1,10 @@
+/**
+ * С-интерфейс для взаимодействия с объектами класса геометрического буфера
+ * Copyright (C) 2020 by Alex "DarkWolf" Nem - https://github.com/darkoffalex
+ */
+
 #pragma once
 
-#include "../Resources/GeometryBuffer.h"
 #include "../Types.h"
 
 namespace rtgl

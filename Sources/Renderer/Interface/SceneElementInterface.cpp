@@ -4,6 +4,8 @@
  */
 
 #include "SceneElementInterface.h"
+#include "../Scene/SceneElement.h"
+
 #include <stdexcept>
 
 namespace rtgl

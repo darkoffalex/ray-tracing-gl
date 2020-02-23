@@ -12,6 +12,8 @@
 
 namespace rtgl
 {
+    /// О С Н О В Н О Е
+
     /**
      * Получить последнее сообщение об ошибке
      * @return Строка с сообщением
@@ -187,5 +189,72 @@ namespace rtgl
         delete _shaderPrograms[RS_GEOMETRY_PREPARE];
         delete _shaderPrograms[RS_RAY_TRACING];
         delete _shaderPrograms[RS_POST_PROCESS];
+    }
+
+    /// К А М Е Р А
+
+    /**
+     * Установка параметров камеры
+     * @param position Положение
+     * @param orientation Ориентация
+     * @return Состояние операции
+     */
+    bool __cdecl SetCameraSettings(const Vec3<float> &position, const Vec3<float> &orientation)
+    {
+        try
+        {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+            _camera->setPosition({position.x,position.y,position.z}, false);
+            _camera->setOrientation({orientation.x,orientation.y,orientation.z});
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Установка положения камеры
+     * @param position Положение
+     * @return Состояние операции
+     */
+    bool __cdecl SetCameraPosition(const Vec3<float> &position)
+    {
+        try
+        {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+            _camera->setPosition({position.x,position.y,position.z});
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Установка ориентации камеры
+     * @param orientation Ориентация
+     * @return Состояние операции
+     */
+    bool __cdecl SetCameraOrientation(const Vec3<float> &orientation)
+    {
+        try
+        {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+            _camera->setOrientation({orientation.x,orientation.y,orientation.z});
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
     }
 }
