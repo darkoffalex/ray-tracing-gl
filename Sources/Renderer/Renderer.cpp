@@ -89,7 +89,31 @@ namespace rtgl
 
             /// Инициализация shader-storage-буферов
             {
-                //TODO: инициализация storage-буферов
+                // Считаем что индексы привязок заданы в шейдере явно
+                GLuint triangleBufferBinding = 0;
+                GLuint triangleBufferCounterBinding = 1;
+
+                // Создать SSBO для структур треугольников
+                // Данные записываются в буфер треугольников на этапе подготовки геометрии (RS_GEOMETRY_PREPARE)
+                // Записанные данные используются на этапе трассировки (RS_RAY_TRACING)
+                glGenBuffers(1, &_triangleBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, _triangleBuffer);
+                // По предварительным подсчетам на треугольник нужно 92 байта (с учетом выравнивания std 140)
+                glBufferData(GL_SHADER_STORAGE_BUFFER, 92 * MAX_TRIANGLES_PREPARE, nullptr, GL_DYNAMIC_DRAW);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, triangleBufferBinding, _triangleBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+                // Создать атомарный счетчик элементов, который будет увеличиваться при записи элемента в буфер
+                // Атомарные операции позволят корректно увеличивать число невзирая на параллелизм выполнения
+                glGenBuffers(1, &_triangleBufferCounter);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleBufferCounter);
+                glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
+                // Обнулить счетчик
+                GLuint zero = 0;
+                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &zero);
+                // Активировать привязку и завершить работу с атомарным счетчиком
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, triangleBufferCounterBinding, _triangleBufferCounter);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
             }
 
             /// Кадровые буферы
@@ -139,8 +163,15 @@ namespace rtgl
      */
     void __cdecl DeInit()
     {
+        // Уничтожение камеры
+        delete _camera;
+
         // Уничтожение фрейм-буферов
         delete _screenFrameBuffer;
+
+        // Уничтожение SSBO (Storage Buffer)
+        GLuint ssbo[2] = {_triangleBuffer, _triangleBufferCounter};
+        glDeleteBuffers(2, ssbo);
 
         // Уничтожение геометрии по умолчанию
         delete _geometryQuad;

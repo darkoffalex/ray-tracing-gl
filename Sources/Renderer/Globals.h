@@ -15,6 +15,10 @@
 
 namespace rtgl
 {
+    /// Максимальное кол-во треугольников которые могут быть записаны в буфер на этапе подготовки геометрии
+    const unsigned MAX_TRIANGLES_PREPARE = 1000;
+
+
     /// Готова ли библиотека к использованию
     bool _bInitialized = false;
 
@@ -40,4 +44,8 @@ namespace rtgl
 
     /// Ресурсы геометрии по умолчанию
     GeometryBuffer* _geometryQuad = nullptr;
+
+    /// Буфер хранения (SSBO) для геометрии (для параллельной записи используется атомарный счетчик)
+    GLuint _triangleBuffer = 0;
+    GLuint _triangleBufferCounter = 0;
 }
