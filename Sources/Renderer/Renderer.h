@@ -7,6 +7,7 @@
 
 #include "Types.h"
 #include "Interface/SceneElementInterface.h"
+#include "Interface/GeometryBufferInterface.h"
 
 namespace rtgl
 {

@@ -30,6 +30,12 @@ namespace rtgl
      */
     bool __cdecl Init(unsigned screenWidth, unsigned screenHeight, const ShaderSourcesBundle &shaderSourcesBundle)
     {
+        // Убеждаемся что типы совместимы
+        assert(sizeof(GLubyte) == sizeof(unsigned char));
+        assert(sizeof(GLchar) == sizeof(char));
+        assert(sizeof(GLfloat) == sizeof(float));
+        assert(sizeof(GLuint) == sizeof(unsigned));
+
         // Изначально считаем что инициализация успешна
         _bInitialized = true;
 

@@ -10,6 +10,8 @@ namespace rtgl
 {
     /// Сообщение о последней ошибке (объявлено в Globals.h->Renderer.cpp)
     extern std::string _strLastErrorMsg;
+    /// Инициализирована ли библиотека (объявлено в Globals.h->Renderer.cpp)
+    extern bool _bInitialized;
 
     /**
      * Настройка параметров элемента сцены
@@ -28,6 +30,8 @@ namespace rtgl
     {
         try
         {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             auto element = reinterpret_cast<SceneElement*>(sceneElement);
             element->setPosition({position.x,position.y,position.z}, false);
             element->setOrientation({orientation.x,orientation.y,orientation.z}, false);
@@ -53,6 +57,8 @@ namespace rtgl
     {
         try
         {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             auto element = reinterpret_cast<SceneElement*>(sceneElement);
             element->setPosition({position.x,position.y,position.z});
         }
@@ -75,6 +81,8 @@ namespace rtgl
     {
         try
         {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             auto element = reinterpret_cast<SceneElement*>(sceneElement);
             element->setOrientation({orientation.x,orientation.y,orientation.z});
         }
@@ -97,6 +105,8 @@ namespace rtgl
     {
         try
         {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             auto element = reinterpret_cast<SceneElement*>(sceneElement);
             element->setOrientation({scale.x,scale.y,scale.z});
         }
@@ -119,6 +129,8 @@ namespace rtgl
     {
         try
         {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             auto element = reinterpret_cast<SceneElement*>(sceneElement);
             element->setOrigin({origin.x, origin.y, origin.z});
         }

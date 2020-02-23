@@ -24,8 +24,8 @@ namespace rtgl
                 3,                           // Размер (сколько значений конкретного типа приходится на один атрибут)
                 GL_FLOAT,                    // Конкретный тип одного значения
                 GL_FALSE,                    // Не нормализовать
-                sizeof(Vertex),              // Размер шага (размер одной вершины)
-                reinterpret_cast<GLvoid*>(offsetof(Vertex, position)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
+                sizeof(Vertex<GLfloat>),     // Размер шага (размер одной вершины)
+                reinterpret_cast<GLvoid*>(offsetof(Vertex<GLfloat>, position)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
         );
 
         // Атрибут "цвет"
@@ -34,8 +34,8 @@ namespace rtgl
                 3,                           // Размер (сколько значений конкретного типа приходится на один атрибут)
                 GL_FLOAT,                    // Конкретный тип одного значения
                 GL_FALSE,                    // Не нормализовать
-                sizeof(Vertex),              // Размер шага (размер одной вершины)
-                reinterpret_cast<GLvoid*>(offsetof(Vertex, color)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
+                sizeof(Vertex<GLfloat>),     // Размер шага (размер одной вершины)
+                reinterpret_cast<GLvoid*>(offsetof(Vertex<GLfloat>, color)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
         );
 
         // Атрибут "текстурные координаты"
@@ -44,8 +44,8 @@ namespace rtgl
                 2,                           // Размер (сколько значений конкретного типа приходится на один атрибут)
                 GL_FLOAT,                    // Конкретный тип одного значения
                 GL_FALSE,                    // Не нормализовать
-                sizeof(Vertex),              // Размер шага (размер одной вершины)
-                reinterpret_cast<GLvoid*>(offsetof(Vertex, uv)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
+                sizeof(Vertex<GLfloat>),     // Размер шага (размер одной вершины)
+                reinterpret_cast<GLvoid*>(offsetof(Vertex<GLfloat>, uv)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
         );
 
         // Атрибут "нормаль"
@@ -54,8 +54,8 @@ namespace rtgl
                 3,                           // Размер (сколько значений конкретного типа приходится на один атрибут)
                 GL_FLOAT,                    // Конкретный тип одного значения
                 GL_FALSE,                    // Не нормализовать
-                sizeof(Vertex),              // Размер шага (размер одной вершины)
-                reinterpret_cast<GLvoid*>(offsetof(Vertex, normal)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
+                sizeof(Vertex<GLfloat>),     // Размер шага (размер одной вершины)
+                reinterpret_cast<GLvoid*>(offsetof(Vertex<GLfloat>, normal)) // Сдвиг (с какого места в блоке данных начинается нужная часть)
         );
 
         // Включить атрибуты
@@ -120,7 +120,7 @@ namespace rtgl
      * @param vertices Массив вершин
      * @param indices Массив индексов
      */
-    GeometryBuffer::GeometryBuffer(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices):
+    GeometryBuffer::GeometryBuffer(const std::vector<Vertex<GLfloat>> &vertices, const std::vector<GLuint> &indices):
             vboId_(0),
             eboId_(0),
             vaoId_(0),
@@ -147,7 +147,7 @@ namespace rtgl
 
         // Помещаем данные в буфер вершин
         glBindBuffer(GL_ARRAY_BUFFER, vboId_);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount_ * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount_ * sizeof(Vertex<GLfloat>), vertices.data(), GL_STATIC_DRAW);
 
         // Помещаем данные в основной буфер индексов
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId_);

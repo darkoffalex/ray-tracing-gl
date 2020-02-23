@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "../Types.h"
+
 #include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -13,14 +15,6 @@ namespace rtgl
 {
     class GeometryBuffer final
     {
-        struct Vertex
-        {
-            glm::vec3 position;
-            glm::vec3 color;
-            glm::vec2 uv;
-            glm::vec3 normal;
-        };
-
     private:
         /// OpenGL дескриптор вершинного буфера
         GLuint vboId_;
@@ -73,7 +67,7 @@ namespace rtgl
          * @param vertices Массив вершин
          * @param indices Массив индексов
          */
-        GeometryBuffer(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
+        GeometryBuffer(const std::vector<Vertex<GLfloat>>& vertices, const std::vector<GLuint>& indices);
 
         /**
          * Очистка ресурса

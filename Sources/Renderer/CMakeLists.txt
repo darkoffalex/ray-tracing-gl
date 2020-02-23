@@ -29,7 +29,9 @@ add_library(${TARGET_NAME} SHARED
         "Scene/Mesh.cpp"
         "Scene/Mesh.h"
         "Interface/SceneElementInterface.cpp"
-        "Interface/SceneElementInterface.h")
+        "Interface/SceneElementInterface.h"
+        "Interface/GeometryBufferInterface.cpp"
+        "Interface/GeometryBufferInterface.h")
 
 # Добавляем символ RENDERER_LIB_EXPORTS для экспорта функций
 target_compile_definitions(${TARGET_NAME} PUBLIC RENDERER_LIB_EXPORTS)
