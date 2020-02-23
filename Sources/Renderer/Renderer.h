@@ -6,17 +6,14 @@
 #pragma once
 
 #include "Types.h"
-
-#ifdef RENDERER_LIB_EXPORTS
-#define RENDERER_LIB_API __declspec(dllexport)
-#else
-#define RENDERER_LIB_API __declspec(dllimport)
-#endif
+#include "Interface/SceneElementInterface.h"
 
 namespace rtgl
 {
     extern "C"
     {
+        /// О С Н О В Н О Е
+
         /**
          * Получить последнее сообщение об ошибке
          * @return Строка с сообщением
@@ -36,6 +33,7 @@ namespace rtgl
          * Уничтожение ресурсов, освобождение памяти
          */
         RENDERER_LIB_API void __cdecl DeInit();
+
     }
 }
 

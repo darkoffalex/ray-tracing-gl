@@ -103,8 +103,9 @@ namespace rtgl
         /**
          * Установить положение
          * @param position Тчока в пространстве
+         * @param updateMatrices Обновление матриц
          */
-        void setPosition(const glm::vec3& position);
+        void setPosition(const glm::vec3& position, bool updateMatrices = true);
 
         /**
          * Получить положение
@@ -115,8 +116,9 @@ namespace rtgl
         /**
          * Установить ориентацию
          * @param orientation Углы поворота вокруг осей
+         * @param updateMatrices Обновление матриц
          */
-        void setOrientation(const glm::vec3& orientation);
+        void setOrientation(const glm::vec3& orientation, bool updateMatrices = true);
 
         /**
          * Получить ориентацию
@@ -127,8 +129,9 @@ namespace rtgl
         /**
          * Установить масштабирование
          * @param scale Вектор масштабирования
+         * @param updateMatrices Обновление матриц
          */
-        void setScale(const glm::vec3& scale);
+        void setScale(const glm::vec3& scale, bool updateMatrices = true);
 
         /**
          * Получить масштаб
@@ -139,8 +142,9 @@ namespace rtgl
         /**
          * Установка локального цертра
          * @param origin Точка локального центра
+         * @param updateMatrices Обновление матриц
          */
-        void setOrigin(const glm::vec3& origin);
+        void setOrigin(const glm::vec3& origin, bool updateMatrices = true);
 
         /**
          * Получить локальный центр

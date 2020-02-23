@@ -13,14 +13,21 @@ namespace rtgl
     class ShaderProgram final
     {
         /// Набор идентификаторов локаций uniform-переменных в шейдерной программе
-        struct UniformLocations
-        {
+        struct UniformLocations {
+            // Этап построения геометрии
             GLuint model = 0;
             GLuint view = 0;
+            GLuint materialAlbedo = 0;
+            GLuint materialMetallic = 0;
+            GLuint materialRoughness = 0;
+
+            // Этап трассировки
+            GLuint aspectRatio = 0;
             GLuint fov = 0;
             GLuint camPosition = 0;
-            GLuint screenTexture = 0;
-            GLuint screenResolution = 0;
+
+            // Этап пост-процессинга
+            GLuint screenTexture;
         };
 
     private:

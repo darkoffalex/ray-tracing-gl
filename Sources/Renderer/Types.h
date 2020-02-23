@@ -5,11 +5,18 @@
 
 #pragma once
 
+#ifdef RENDERER_LIB_EXPORTS
+#define RENDERER_LIB_API __declspec(dllexport)
+#else
+#define RENDERER_LIB_API __declspec(dllimport)
+#endif
+
 namespace rtgl
 {
     /// Д Е С К Р И П Т О Р Ы ( H A N D L E S)
 
-    typedef void* HGeometry;
+    typedef void* HGeometryBuffer;
+    typedef void* HSceneElement;
     typedef void* HMesh;
 
     /// П Е Р Е Ч И С Л Я Е М Ы Е

@@ -8,6 +8,7 @@
 
 #include <GL/glew.h>
 #include <stdexcept>
+#include <cstring>
 
 namespace rtgl
 {

@@ -48,11 +48,19 @@ namespace rtgl
      */
     void ShaderProgram::obtainLocations()
     {
+        // Этап построения геометрии
         this->locations_.model = glGetUniformLocation(id_, "_model");
         this->locations_.view = glGetUniformLocation(id_, "_view");
+        this->locations_.materialAlbedo = glGetUniformLocation(id_, "_materialAlbedo");
+        this->locations_.materialMetallic = glGetUniformLocation(id_, "_materialMetallic");
+        this->locations_.materialRoughness = glGetUniformLocation(id_, "_materialRoughness");
+
+        // Этап трассировки
+        this->locations_.aspectRatio = glGetUniformLocation(id_, "_aspectRatio");
         this->locations_.fov = glGetUniformLocation(id_, "_fov");
-        this->locations_.screenResolution = glGetUniformLocation(id_, "_screenResolution");
         this->locations_.camPosition = glGetUniformLocation(id_, "_camPosition");
+
+        // Этап пост-процессинга
         this->locations_.screenTexture = glGetUniformLocation(id_, "_screenTexture");
     }
 
