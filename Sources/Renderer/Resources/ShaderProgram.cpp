@@ -6,6 +6,7 @@
 #include "ShaderProgram.h"
 
 #include <vector>
+#include <stdexcept>
 
 namespace rtgl
 {
@@ -150,7 +151,7 @@ namespace rtgl
             throw std::runtime_error(std::string("Shader program linking error: ").append(message));
         }
 
-        // Получить локации uniform-переменныхв
+        // Получить локации uniform-переменных
         this->obtainLocations();
     }
 

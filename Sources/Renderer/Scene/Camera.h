@@ -1,14 +1,14 @@
 /**
  * Класс камеры. Используется для построения матрицы проекции с учетом всех установок
  * Матрица обновляется только после изменения параметров от которых она зависит
- * В данной версии рендерера большая часть функионала данного класса не используется, поскольку в проекции нет нужды
+ * В данной версии рендерера большая часть функционала данного класса не используется, поскольку в проекции нет нужды
  * Copyright (C) 2020 by Alex "DarkWolf" Nem - https://github.com/darkoffalex
  */
 
 #pragma once
 
 #include "SceneElement.h"
-#include <GL/gl.h>
+#include <GL/glew.h>
 
 namespace rtgl
 {
@@ -119,7 +119,7 @@ namespace rtgl
         [[nodiscard]] const float& getFov() const;
 
         /**
-         * Усиановить соотношение сторон
+         * Установить соотношение сторон
          * @param aspectRatio
          */
         void setAspectRatio(const float& aspectRatio);
