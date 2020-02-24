@@ -2,6 +2,8 @@
 #include <windows.h>
 
 #include "WinTools.h"
+#include "Tools.h"
+#include "Timer.h"
 #include "../Renderer/Renderer.h"
 
 /// Дескриптор исполняемого модуля программы
@@ -12,6 +14,8 @@ HWND _hwnd = nullptr;
 HDC _hdc = nullptr;
 /// Дескриптор контекста OpenGL
 HGLRC _hglrc = nullptr;
+/// Таймер
+Timer* _timer = nullptr;
 
 /**
  * Точка входа
@@ -53,10 +57,56 @@ int main(int argc, char* argv[])
 
         // Получение контекста отрисовки
         _hdc = GetDC(_hwnd);
-        // Создание контекста OpenGL
-        _hglrc = win_tools::CreateOpenGlContext(_hdc);
 
-        //TODO: какая-то инициализация рендерера
+        // Размеры клиентской области окна
+        RECT clientRect;
+        GetClientRect(_hwnd, &clientRect);
+
+        // Создание контекста OpenGL
+        _hglrc = win_tools::OpenGlCreateContext(_hdc);
+
+        // Отключение вертикальной синхронизации OpenGL
+        win_tools::OpenGlSetVSync(false);
+
+        /** Рендерер - инициализация **/
+
+        // Загрзить исходный код шейдеров
+        std::string gpv = tools::LoadStringFromFile(tools::ShaderDir().append("geometry-prepare.vert"));
+        std::string gpg = tools::LoadStringFromFile(tools::ShaderDir().append("geometry-prepare.geom"));
+        std::string gpf = tools::LoadStringFromFile(tools::ShaderDir().append("geometry-prepare.frag"));
+
+        // Инициализация рендерера
+        if(!rtgl::Init(clientRect.right, clientRect.bottom, {gpv.c_str(), gpg.c_str(), gpf.c_str()})){
+            throw std::runtime_error(rtgl::GetLastErrorMessage());
+        }
+
+        /** Рендерер - загрузка ресурсов **/
+
+        // Геометрия
+        rtgl::Vertex<float> vertices[4] = {
+                { { 1.0f,1.0f,0.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,0.0f,1.0f} },
+                { { 1.0f,-1.0f,0.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,0.0f,1.0f} },
+                { { -1.0f,-1.0f,0.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,0.0f,1.0f} },
+                { { -1.0f,1.0f,0.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,0.0f,1.0f} },
+        };
+        unsigned indices[6] = { 0,1,2, 0,2,3 };
+
+        rtgl::HGeometryBuffer quadBuffer = rtgl::CreateGeometryBuffer(vertices,4,indices,6);
+        if(quadBuffer == nullptr){
+            throw std::runtime_error(rtgl::GetLastErrorMessage());
+        }
+
+        /** Рендерер - объекты сцены **/
+
+        rtgl::HMesh quadMesh = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+        if(quadMesh == nullptr){
+            throw std::runtime_error(rtgl::GetLastErrorMessage());
+        }
+
+        /** MAIN LOOP **/
+
+        // Таймер основного цикла (для выясняения временной дельты и FPS)
+        _timer = new Timer();
 
         // Оконное сообщение
         MSG msg = {};
@@ -64,6 +114,9 @@ int main(int argc, char* argv[])
         // Запуск цикла
         while (true)
         {
+            // Обновить таймер
+            _timer->updateTimer();
+
             // Обработка оконных сообщений
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
             {
@@ -74,8 +127,23 @@ int main(int argc, char* argv[])
                 }
             }
 
-            //TODO: какая-то подготовка сцены
-            //TODO: какая-то работа с рендерером
+            // Поскольку показ FPS на окне уменьшает FPS - делаем это только тогда когда счетчик готов (примерно 1 раз в секунду)
+            if (_timer->isFpsCounterReady()){
+                std::string fps = std::string("Ray Tracing (").append(std::to_string(_timer->getFps())).append(" FPS)");
+                SetWindowTextA(_hwnd, fps.c_str());
+            }
+
+            /// Обновление сцены
+
+            rtgl::SetCameraPosition({0.0f,0.0f,0.0f});
+
+            /// Отрисовка и показ кадра
+
+            // Отрисовка меша
+            rtgl::SetMesh(quadMesh);
+
+            // Смена буферов окна
+            SwapBuffers(_hdc);
         }
     }
     catch(std::exception& ex)

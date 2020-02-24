@@ -16,7 +16,11 @@ set(TARGET_BIN_NAME "DemoApp")
 add_executable(${TARGET_NAME}
         "Main.cpp"
         "WinTools.h"
-        "WinTools.cpp")
+        "WinTools.cpp"
+        "Tools.cpp"
+        "Tools.h"
+        "Timer.cpp"
+        "Timer.h")
 
 # Меняем название запускаемого файла в зависимости от типа сборки
 set_property(TARGET ${TARGET_NAME} PROPERTY OUTPUT_NAME "${TARGET_BIN_NAME}$<$<CONFIG:Debug>:_Debug>")
@@ -30,3 +34,5 @@ endif()
 
 # Линковка с библиотекой Renderer
 target_link_libraries(${TARGET_NAME} PUBLIC "Renderer")
+# Линковка с shlwapi.lib для получения путей к файлам (tools)
+target_link_libraries(${TARGET_NAME} PUBLIC "shlwapi.lib")

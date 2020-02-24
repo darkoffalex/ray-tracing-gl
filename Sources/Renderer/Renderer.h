@@ -59,6 +59,21 @@ namespace rtgl
          * @return Состояние операции
          */
         RENDERER_LIB_API bool __cdecl SetCameraOrientation(const Vec3<float>& orientation);
+
+        /// Р Е Н Д Е Р И Н Г
+
+        /**
+         * Добавление меша в геометрический буфер (SSBO-буфер треугольников)
+         * @param mesh Хендл меша
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl SetMesh(HMesh mesh);
+
+        /**
+         * Отрисовка всей сцены (проход трассировки лучей)
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl DrawScene();
     }
 }
 

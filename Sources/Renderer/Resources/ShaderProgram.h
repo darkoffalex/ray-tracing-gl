@@ -17,6 +17,7 @@ namespace rtgl
             // Этап построения геометрии
             GLuint model = 0;
             GLuint view = 0;
+            GLuint projection = 0;
             GLuint materialAlbedo = 0;
             GLuint materialMetallic = 0;
             GLuint materialRoughness = 0;

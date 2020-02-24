@@ -3,6 +3,14 @@
 
 namespace win_tools
 {
+    /// Указатель на OpenGL функцию для управления вертикальной синхронизацией
+    typedef BOOL(APIENTRY * PfnWglSwapInterval)(int);
+
+    /// Указатель на OpenGL функцию для получения строки с перечисленными свойствами OpenGL
+    typedef GLubyte*(APIENTRY * PfnGlGetString)(GLenum);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /**
      * Обработчик оконных сообщений
      * @param hWnd Дескриптор окна
@@ -52,7 +60,7 @@ namespace win_tools
      * @param drawContext Контекст рисования окна Windows
      * @return Дескриптор контекста OpenGL
      */
-    HGLRC CreateOpenGlContext(HDC drawContext) {
+    HGLRC OpenGlCreateContext(HDC drawContext) {
 
         // Описываем необходимый формат пикселей
         PIXELFORMATDESCRIPTOR pfd = {};
@@ -66,16 +74,16 @@ namespace win_tools
         pfd.iLayerType = PFD_MAIN_PLANE;
 
         // Номер формата пикселей
-        const int pixelFormatID = ChoosePixelFormat(drawContext, &pfd);
+        const int pixelFormatId = ChoosePixelFormat(drawContext, &pfd);
 
         // Если не удалось найти подходящего формата пикселей
-        if (!pixelFormatID) {
+        if (!pixelFormatId) {
             throw std::runtime_error("Can't find suitable pixel format");
         }
 
         // Найти наиболее подходящее описание формата
         PIXELFORMATDESCRIPTOR bestMatchPfd;
-        DescribePixelFormat(drawContext, pixelFormatID, sizeof(PIXELFORMATDESCRIPTOR), &bestMatchPfd);
+        DescribePixelFormat(drawContext, pixelFormatId, sizeof(PIXELFORMATDESCRIPTOR), &bestMatchPfd);
 
         // Если не удалось найти подходящего формата пикселей
         if (bestMatchPfd.cDepthBits < pfd.cDepthBits) {
@@ -83,7 +91,7 @@ namespace win_tools
         }
 
         // Если не удалось установить формат пикселей
-        if (!SetPixelFormat(drawContext, pixelFormatID, &pfd)) {
+        if (!SetPixelFormat(drawContext, pixelFormatId, &pfd)) {
             throw std::runtime_error("Can't set selected pixel format");
         }
 
@@ -100,5 +108,54 @@ namespace win_tools
         }
 
         return glContext;
+    }
+
+    /**
+     * Получение адреса функции OpenGL
+     * @param name Имя функции
+     * @return Указатель на функцию
+     */
+    void *OpenGlGetFunction(const char *name)
+    {
+        void *p = (void *)wglGetProcAddress(name);
+        if(p == nullptr ||
+           (p == (void*)0x1) || (p == (void*)0x2) || (p == (void*)0x3) ||
+           (p == (void*)-1) )
+        {
+            HMODULE module = LoadLibraryA("opengl32.dll");
+            p = (void *)GetProcAddress(module, name);
+        }
+
+        return p;
+    }
+
+    /**
+     * Управление вертикальной синхронизацией OpenGL
+     * @param status
+     * @return Состояние операции
+     */
+    bool OpenGlSetVSync(bool status)
+    {
+        // Получаем OpenGL функцию для получения OpenGL строки
+        const auto glGetString = reinterpret_cast<PfnGlGetString>(OpenGlGetFunction("glGetString"));
+
+        // Получаем при помощи glGetString строку с доступными расширениями
+        const char* extensions = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
+
+        // Если есть нужное расширение
+        if (strstr(extensions, "WGL_EXT_swap_control"))
+        {
+            // Получить указатель на функцию для управления вертикальной синхронизацией
+            const auto wglSwapInterval = reinterpret_cast<PfnWglSwapInterval>(OpenGlGetFunction("wglSwapIntervalEXT"));
+            // Если удалось получить - использовать функцию, в противном случае сгенерировать исключение
+            if (wglSwapInterval) wglSwapInterval(status);
+            else return false;
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
     }
 }

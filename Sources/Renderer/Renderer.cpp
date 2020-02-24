@@ -6,7 +6,10 @@
 #include "Renderer.h"
 #include "Globals.h"
 
+#include "Scene/Mesh.h"
+
 #include <GL/glew.h>
+#include <glm/gtc/type_ptr.inl>
 #include <stdexcept>
 #include <cstring>
 
@@ -65,6 +68,7 @@ namespace rtgl
                         {GL_FRAGMENT_SHADER,shaderSourcesBundle.geometryPrepareFs}
                 });
 
+                /*
                 // Программа для стадии трассировки
                 _shaderPrograms[RS_RAY_TRACING] = new ShaderProgram({
                         {GL_VERTEX_SHADER,shaderSourcesBundle.rayTracingVs},
@@ -76,6 +80,7 @@ namespace rtgl
                         {GL_VERTEX_SHADER,shaderSourcesBundle.postProcessVs},
                         {GL_FRAGMENT_SHADER,shaderSourcesBundle.postProcessFs}
                 });
+                */
             }
 
             /// Ресурсы по умолчанию - геометрия
@@ -135,7 +140,7 @@ namespace rtgl
                 // Буфер состоит только из цветового вложения, поскольку нам НЕ нужен буфер глубины (ray tracing)
                 _screenFrameBuffer = new FrameBuffer(_screenWidth,_screenHeight);
                 _screenFrameBuffer -> addTextureAttachment(GL_RGB32F,GL_RGB,GL_COLOR_ATTACHMENT0,false);
-                if(_screenFrameBuffer->prepareBuffer({GL_COLOR_ATTACHMENT0})){
+                if(!_screenFrameBuffer->prepareBuffer({GL_COLOR_ATTACHMENT0})){
                     throw std::runtime_error("Can't initialize screen frame buffer");
                 }
             }
@@ -248,6 +253,88 @@ namespace rtgl
         {
             if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
             _camera->setOrientation({orientation.x,orientation.y,orientation.z});
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
+
+    /// Р Е Н Д Е Р И Н Г
+
+    /**
+     * Добавление меша в геометрический буфер (SSBO-буфер треугольников)
+     * @param mesh Хендл меша
+     * @return Состояние операции
+     */
+    bool __cdecl SetMesh(HMesh mesh)
+    {
+        try
+        {
+            // Указатель на меш
+            auto pMesh = reinterpret_cast<Mesh*>(mesh);
+
+            // Проверка на готовность к операции
+            if(!_bInitialized)
+                throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+            if(_shaderPrograms[RS_GEOMETRY_PREPARE] == nullptr)
+                throw std::runtime_error("No required shader set");
+            if(pMesh == nullptr)
+                throw std::runtime_error("No mesh provided");
+
+            // Если пердыдущий проход был другим - установить необходимые параметры
+            if(_lastRenderingStage != RS_GEOMETRY_PREPARE)
+            {
+                // Привязываемся ко фрейм-буфферу (временно используем основной)
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                // Использовать шейдер
+                glUseProgram(_shaderPrograms[RS_GEOMETRY_PREPARE]->getId());
+
+                // Включение необходимых параметров (тест глубины, тест ножниц, отбрасывание задних граней)
+                glEnable(GL_DEPTH_TEST | GL_SCISSOR_TEST);
+
+                // Отключение необходимых параметров (тест трафарета, смешивание цветов, не отбрасывание бесконечно-далеких фрагментов)
+                glDisable(GL_STENCIL_TEST | GL_BLEND | GL_DEPTH_CLAMP);
+
+                // Включить запись в цветовой буфер
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+                // Включить запись в Z-буфер
+                glDepthMask(GL_TRUE);
+
+                // Указать область кадра доступную для отрисовки
+                glScissor(0, 0, _screenWidth, _screenHeight);
+                glViewport(0, 0, _screenWidth, _screenHeight);
+
+                // Очистка буфера
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Сменить идентификатор последного прохода
+                _lastRenderingStage = RS_GEOMETRY_PREPARE;
+            }
+
+            // Передача матриц в шейдер
+            glUniformMatrix4fv(
+                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->view,
+                    1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
+
+            glUniformMatrix4fv(
+                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->projection,
+                    1, GL_FALSE, glm::value_ptr(_camera->getProjectionMatrix()));
+
+            glUniformMatrix4fv(
+                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->model,
+                    1, GL_FALSE, glm::value_ptr(pMesh->getModelMatrix()));
+
+            // Привязать геометрию и нарисовать ее
+            glBindVertexArray(pMesh->geometry->getVaoId());
+            glDrawElements(GL_TRIANGLES, pMesh->geometry->getIndexCount(), GL_UNSIGNED_INT, nullptr);
+            glBindVertexArray(0);
         }
         catch(std::exception& ex)
         {

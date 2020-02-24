@@ -51,6 +51,7 @@ namespace rtgl
         // Этап построения геометрии
         this->locations_.model = glGetUniformLocation(id_, "_model");
         this->locations_.view = glGetUniformLocation(id_, "_view");
+        this->locations_.projection = glGetUniformLocation(id_,"_projection");
         this->locations_.materialAlbedo = glGetUniformLocation(id_, "_materialAlbedo");
         this->locations_.materialMetallic = glGetUniformLocation(id_, "_materialMetallic");
         this->locations_.materialRoughness = glGetUniformLocation(id_, "_materialRoughness");

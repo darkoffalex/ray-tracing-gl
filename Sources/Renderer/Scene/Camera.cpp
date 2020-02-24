@@ -61,10 +61,13 @@ namespace rtgl
         {
             case ProjectionType::PROJ_PERSPECTIVE:
                 this->projectionMatrix_ = glm::perspective(glm::radians(fov_), aspectRatio_, zNear_, zFar_);
+                break;
             case ProjectionType::PROJ_ORTHOGRAPHIC:
                 this->projectionMatrix_ = glm::ortho(-fov_ * aspectRatio_ / 2.0f, fov_ * aspectRatio_ / 2.0f, -fov_ / 2.0f, fov_ / 2.0f, zNear_, zFar_);
+                break;
             default:
                 this->projectionMatrix_ = glm::mat4(1);
+                break;
         }
     }
 

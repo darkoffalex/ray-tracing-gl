@@ -39,7 +39,7 @@ namespace rtgl
      * Этапы рендеринга сцены (проходы)
      * Рендеринг состоит из нескольких отдельных этапов, у каждого может быть своя шейдерная программа
      */
-    enum RenderingStage { RS_GEOMETRY_PREPARE, RS_RAY_TRACING, RS_POST_PROCESS };
+    enum RenderingStage { RS_GEOMETRY_PREPARE, RS_RAY_TRACING, RS_POST_PROCESS, RS_NONE };
 
     /// С Т Р У К Т У Р Ы
 

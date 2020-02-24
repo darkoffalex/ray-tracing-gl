@@ -48,4 +48,8 @@ namespace rtgl
     /// Буфер хранения (SSBO) для геометрии (для параллельной записи используется атомарный счетчик)
     GLuint _triangleBuffer = 0;
     GLuint _triangleBufferCounter = 0;
+
+    /// Идентификатор последнего этапа (прохода)
+    RenderingStage _lastRenderingStage = RenderingStage::RS_NONE;
+
 }

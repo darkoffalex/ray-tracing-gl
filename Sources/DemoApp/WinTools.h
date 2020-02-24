@@ -1,6 +1,8 @@
 #pragma once
 
+#include <stdexcept>
 #include <windows.h>
+#include <GL/gl.h>
 
 namespace win_tools
 {
@@ -27,5 +29,19 @@ namespace win_tools
      * @param drawContext Контекст рисования окна Windows
      * @return Дескриптор контекста OpenGL
      */
-    HGLRC CreateOpenGlContext(HDC drawContext);
+    HGLRC OpenGlCreateContext(HDC drawContext);
+
+    /**
+     * Получение адреса функции OpenGL
+     * @param name Имя функции
+     * @return Указатель на функцию
+     */
+    void *OpenGlGetFunction(const char *name);
+
+    /**
+     * Управление вертикальной синхронизацией OpenGL
+     * @param status
+     * @return Состояние операции
+     */
+    bool OpenGlSetVSync(bool status);
 }
