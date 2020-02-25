@@ -75,8 +75,11 @@ int main(int argc, char* argv[])
         std::string gpg = tools::LoadStringFromFile(tools::ShaderDir().append("geometry-prepare.geom"));
         std::string gpf = tools::LoadStringFromFile(tools::ShaderDir().append("geometry-prepare.frag"));
 
+        std::string rtv = tools::LoadStringFromFile(tools::ShaderDir().append("ray-tracing.vert"));
+        std::string rtf = tools::LoadStringFromFile(tools::ShaderDir().append("ray-tracing.frag"));
+
         // Инициализация рендерера
-        if(!rtgl::Init(clientRect.right, clientRect.bottom, {gpv.c_str(), gpg.c_str(), gpf.c_str()})){
+        if(!rtgl::Init(clientRect.right, clientRect.bottom, {gpv.c_str(), gpg.c_str(), gpf.c_str(),rtv.c_str(),rtf.c_str()})){
             throw std::runtime_error(rtgl::GetLastErrorMessage());
         }
 
@@ -98,10 +101,9 @@ int main(int argc, char* argv[])
 
         /** Рендерер - объекты сцены **/
 
-        rtgl::HMesh quadMesh = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-        if(quadMesh == nullptr){
-            throw std::runtime_error(rtgl::GetLastErrorMessage());
-        }
+        rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
+        rtgl::HMesh quadMesh2 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,30.0f,0.0f},{1.0f,1.0f,1.0f});
+
 
         /** MAIN LOOP **/
 
@@ -135,12 +137,12 @@ int main(int argc, char* argv[])
 
             /// Обновление сцены
 
-            rtgl::SetCameraPosition({0.0f,0.0f,0.0f});
+            //rtgl::SetCameraPosition({0.0f,0.0f,0.0f});
 
             /// Отрисовка и показ кадра
 
-            // Отрисовка меша
-            rtgl::SetMesh(quadMesh);
+            // Трасировка сцены
+            rtgl::RenderScene();
 
             // Смена буферов окна
             SwapBuffers(_hdc);

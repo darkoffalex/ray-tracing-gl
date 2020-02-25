@@ -73,7 +73,7 @@ namespace rtgl
          * Отрисовка всей сцены (проход трассировки лучей)
          * @return Состояние операции
          */
-        RENDERER_LIB_API bool __cdecl DrawScene();
+        RENDERER_LIB_API bool __cdecl RenderScene();
     }
 }
 

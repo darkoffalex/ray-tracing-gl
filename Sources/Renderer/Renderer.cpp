@@ -68,13 +68,13 @@ namespace rtgl
                         {GL_FRAGMENT_SHADER,shaderSourcesBundle.geometryPrepareFs}
                 });
 
-                /*
                 // Программа для стадии трассировки
                 _shaderPrograms[RS_RAY_TRACING] = new ShaderProgram({
                         {GL_VERTEX_SHADER,shaderSourcesBundle.rayTracingVs},
                         {GL_FRAGMENT_SHADER,shaderSourcesBundle.rayTracingFs}
                 });
 
+                /*
                 // Программа для стадии пост-процессинга
                 _shaderPrograms[RS_POST_PROCESS] = new ShaderProgram({
                         {GL_VERTEX_SHADER,shaderSourcesBundle.postProcessVs},
@@ -161,6 +161,10 @@ namespace rtgl
                 glCullFace(GL_BACK);
                 // Тип рендеринга треугольников по умолчанию
                 glPolygonMode(GL_FRONT, GL_FILL);
+                // Функция тест глубины (Z-тест нужен лишь для отладки, для трассировки не используется)
+                glDepthFunc(GL_LEQUAL);
+                // Тест ножниц по умолчнию включен
+                glEnable(GL_SCISSOR_TEST);
             }
         }
         catch(std::exception& ex)
@@ -294,11 +298,8 @@ namespace rtgl
                 // Использовать шейдер
                 glUseProgram(_shaderPrograms[RS_GEOMETRY_PREPARE]->getId());
 
-                // Включение необходимых параметров (тест глубины, тест ножниц, отбрасывание задних граней)
-                glEnable(GL_DEPTH_TEST | GL_SCISSOR_TEST);
-
-                // Отключение необходимых параметров (тест трафарета, смешивание цветов, не отбрасывание бесконечно-далеких фрагментов)
-                glDisable(GL_STENCIL_TEST | GL_BLEND | GL_DEPTH_CLAMP);
+                // Включить тест глубины
+                glEnable(GL_DEPTH_TEST);
 
                 // Включить запись в цветовой буфер
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -334,6 +335,71 @@ namespace rtgl
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(pMesh->geometry->getVaoId());
             glDrawElements(GL_TRIANGLES, pMesh->geometry->getIndexCount(), GL_UNSIGNED_INT, nullptr);
+            glBindVertexArray(0);
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Отрисовка всей сцены (проход трассировки лучей)
+     * @return Состояние операции
+     */
+    bool __cdecl RenderScene()
+    {
+        try
+        {
+            // Проверка на готовность к операции
+            if(!_bInitialized)
+                throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+            if(_shaderPrograms[RS_RAY_TRACING] == nullptr)
+                throw std::runtime_error("No required shader set");
+
+            // Если пердыдущий проход был другим - установить необходимые параметры
+            if(_lastRenderingStage != RS_RAY_TRACING)
+            {
+                // Привязываемся ко фрейм-буфферу (временно используем основной)
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                // Использовать шейдер
+                glUseProgram(_shaderPrograms[RS_RAY_TRACING]->getId());
+
+                // Включить запись в цветовой буфер
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+                // Выключить тест глубины
+                glDisable(GL_DEPTH_TEST);
+
+                // Выключить запись в Z-буфер
+                glDepthMask(GL_FALSE);
+
+                // Указать область кадра доступную для отрисовки
+                glScissor(0, 0, _screenWidth, _screenHeight);
+                glViewport(0, 0, _screenWidth, _screenHeight);
+
+                // Сменить идентификатор последного прохода
+                _lastRenderingStage = RS_RAY_TRACING;
+            }
+
+            // Очистка буфера
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            // Передать FOV
+            glUniform1f(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->fov,_camera->getFov());
+            // Передать соотношение сторон
+            glUniform1f(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->aspectRatio,_camera->getAspectRatio());
+            // Передать положение камеры
+            glUniform3fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->camPosition, 1, glm::value_ptr(_camera->getPosition()));
+
+            // Привязать геометрию и нарисовать ее
+            glBindVertexArray(_geometryQuad->getVaoId());
+            glDrawElements(GL_TRIANGLES, _geometryQuad->getIndexCount(), GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
         }
         catch(std::exception& ex)
