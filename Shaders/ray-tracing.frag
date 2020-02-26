@@ -135,6 +135,27 @@ vec3 rayDirection(float fov, float aspectRatio, vec2 fragCoord)
     return normalize(direction);
 }
 
+// Получить интерполированные значения вершины
+Vertex interpolatedVertex(Vertex[3] vertices, vec2 barycentric)
+{
+    // Результирующий объект с интерполированными значениями
+    Vertex result;
+
+    // Значения полей структуры по отдельности
+    vec3 pos[3] = vec3[3](vertices[0].position,vertices[1].position,vertices[2].position);
+    vec3 col[3] = vec3[3](vertices[0].color,vertices[1].color,vertices[2].color);
+    vec2 uvs[3] = vec2[3](vertices[0].uv,vertices[1].uv,vertices[2].uv);
+    vec3 nor[3] = vec3[3](vertices[0].normal,vertices[1].normal,vertices[2].normal);
+
+    // Интерполяция с использованием барицентрических координат
+    result.position = pos[0] + ((pos[1] - pos[0]) * barycentric.y) + ((pos[2] - pos[0]) * barycentric.x);
+    result.color = col[0] + ((col[1] - col[0]) * barycentric.y) + ((col[2] - col[0]) * barycentric.x);
+    result.uv = uvs[0] + ((uvs[1] - uvs[0]) * barycentric.y) + ((uvs[2] - uvs[0]) * barycentric.x);
+    result.normal = nor[0] + ((nor[1] - nor[0]) * barycentric.y) + ((nor[2] - nor[0]) * barycentric.x);
+
+    return result;
+}
+
 // Основная функция фрагментного шейдера
 // Здесь осуществляется трассировка луча исходящего из конкретного фрагмента
 void main()
@@ -158,7 +179,11 @@ void main()
         // Если пересечение засчитано
         if(intersectsTriangle(triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
         {
-            resultColor = vec3(1.0f,0.0f,0.0f);
+            // Интерполированные значения треугольника
+            Vertex interpolated = interpolatedVertex(triangles[i].vertices,barycentric);
+
+            // Используем интерполированный цвет
+            resultColor = interpolated.color;
         }
     }
 
