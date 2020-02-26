@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 /*Схема входа-выхода*/
 
@@ -35,28 +35,19 @@ uniform vec3 _camPosition;
 uniform float _aspectRatio;
 uniform float _fov;
 
+/*SSBO-буферы*/
+
+layout(std140, binding=0) buffer triangleBuffer {
+    Triangle _triangles[];
+};
+
+layout(binding=1, offset=0) uniform atomic_uint _triangleCounter;
+
 /*Вход*/
 
 in VS_OUT {
     vec2 uv;
 } fs_in;
-
-/*Константы*/
-
-// Отладочный буфер из двух треугольников
-const Triangle triangles[2] = Triangle[2](
-    Triangle(Vertex[3](
-        Vertex(vec3(1.0f,1.0f,-5.0f),vec3(1.0f,0.0f,0.0f),vec2(1.0f,1.0f),vec3(0.0f,0.0f,1.0f)),
-        Vertex(vec3(1.0f,-1.0f,-5.0f),vec3(0.0f,1.0f,0.0f),vec2(1.0f,0.0f),vec3(0.0f,0.0f,1.0f)),
-        Vertex(vec3(-1.0f,-1.0f,-5.0f),vec3(0.0f,0.0f,1.0f),vec2(0.0f,0.0f),vec3(0.0f,0.0f,1.0f))
-    ),
-    vec3(1.0f),0.0f,1.0f),
-    Triangle(Vertex[3](
-        Vertex(vec3(1.0f,1.0f,-5.0f),vec3(1.0f,0.0f,0.0f),vec2(1.0f,1.0f),vec3(0.0f,0.0f,1.0f)),
-        Vertex(vec3(-1.0f,-1.0f,-5.0f),vec3(0.0f,0.0f,1.0f),vec2(0.0f,0.0f),vec3(0.0f,0.0f,1.0f)),
-        Vertex(vec3(-1.0f,1.0f,-5.0f),vec3(1.0f,1.0f,0.0f),vec2(0.0f,1.0f),vec3(0.0f,0.0f,1.0f))
-    ),vec3(1.0f),0.0f,1.0f)
-);
 
 /*Функции*/
 
@@ -166,8 +157,11 @@ void main()
     // Результирующий цвет
     vec3 resultColor = vec3(0.0f);
 
+    // Количество треугольников на основании данных атомарного счетчика
+    uint triangleCount = atomicCounter(_triangleCounter);
+
     // Пройтись по треугольникам
-    for(int i = 0; i < 2; i++)
+    for(int i = 0; i < triangleCount; i++)
     {
         // Точка пересечения в (в пространстве наблюдателя)
         vec3 intersectionPoint;
@@ -177,10 +171,10 @@ void main()
         vec2 barycentric;
 
         // Если пересечение засчитано
-        if(intersectsTriangle(triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+        if(intersectsTriangle(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
         {
             // Интерполированные значения треугольника
-            Vertex interpolated = interpolatedVertex(triangles[i].vertices,barycentric);
+            Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
 
             // Используем интерполированный цвет
             resultColor = interpolated.color;

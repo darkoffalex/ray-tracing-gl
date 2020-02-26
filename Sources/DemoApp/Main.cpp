@@ -95,14 +95,11 @@ int main(int argc, char* argv[])
         unsigned indices[6] = { 0,1,2, 0,2,3 };
 
         rtgl::HGeometryBuffer quadBuffer = rtgl::CreateGeometryBuffer(vertices,4,indices,6);
-        if(quadBuffer == nullptr){
-            throw std::runtime_error(rtgl::GetLastErrorMessage());
-        }
 
         /** Рендерер - объекты сцены **/
 
         rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-        rtgl::HMesh quadMesh2 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,30.0f,0.0f},{1.0f,1.0f,1.0f});
+        rtgl::HMesh quadMesh2 = rtgl::CreateMesh(quadBuffer,{3.0f,0.0f,-10.0f},{0.0f,0.0f,45.0f},{1.0f,1.0f,1.0f});
 
 
         /** MAIN LOOP **/
@@ -140,6 +137,9 @@ int main(int argc, char* argv[])
             //rtgl::SetCameraPosition({0.0f,0.0f,0.0f});
 
             /// Отрисовка и показ кадра
+
+            rtgl::SetMesh(quadMesh1);
+            rtgl::SetMesh(quadMesh2);
 
             // Трасировка сцены
             rtgl::RenderScene();

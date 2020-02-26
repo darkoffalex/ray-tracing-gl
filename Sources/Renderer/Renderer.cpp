@@ -112,8 +112,8 @@ namespace rtgl
                 // Записанные данные используются на этапе трассировки (RS_RAY_TRACING)
                 glGenBuffers(1, &_triangleBuffer);
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, _triangleBuffer);
-                // По предварительным подсчетам на треугольник нужно 92 байта (с учетом выравнивания std 140)
-                glBufferData(GL_SHADER_STORAGE_BUFFER, 92 * MAX_TRIANGLES_PREPARE, nullptr, GL_DYNAMIC_DRAW);
+                // По предварительным подсчетам на треугольник нужно 224 байта (с учетом выравнивания std 140)
+                glBufferData(GL_SHADER_STORAGE_BUFFER, 224 * MAX_TRIANGLES_PREPARE, nullptr, GL_DYNAMIC_DRAW);
                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, triangleBufferBinding, _triangleBuffer);
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -298,22 +298,11 @@ namespace rtgl
                 // Использовать шейдер
                 glUseProgram(_shaderPrograms[RS_GEOMETRY_PREPARE]->getId());
 
-                // Включить тест глубины
-                glEnable(GL_DEPTH_TEST);
-
-                // Включить запись в цветовой буфер
-                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-                // Включить запись в Z-буфер
-                glDepthMask(GL_TRUE);
-
-                // Указать область кадра доступную для отрисовки
-                glScissor(0, 0, _screenWidth, _screenHeight);
-                glViewport(0, 0, _screenWidth, _screenHeight);
-
-                // Очистка буфера
-                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // Сброс атомарного счетчика треугольников в SSBO
+                GLuint zero = 0;
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleBufferCounter);
+                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &zero);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
                 // Сменить идентификатор последного прохода
                 _lastRenderingStage = RS_GEOMETRY_PREPARE;
@@ -325,12 +314,11 @@ namespace rtgl
                     1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
 
             glUniformMatrix4fv(
-                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->projection,
-                    1, GL_FALSE, glm::value_ptr(_camera->getProjectionMatrix()));
-
-            glUniformMatrix4fv(
                     _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->model,
                     1, GL_FALSE, glm::value_ptr(pMesh->getModelMatrix()));
+
+            // Ожидаем завершения работы с вершинами в предыдущем вызове
+            glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(pMesh->geometry->getVaoId());
@@ -371,12 +359,6 @@ namespace rtgl
 
                 // Включить запись в цветовой буфер
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-                // Выключить тест глубины
-                glDisable(GL_DEPTH_TEST);
-
-                // Выключить запись в Z-буфер
-                glDepthMask(GL_FALSE);
 
                 // Указать область кадра доступную для отрисовки
                 glScissor(0, 0, _screenWidth, _screenHeight);
