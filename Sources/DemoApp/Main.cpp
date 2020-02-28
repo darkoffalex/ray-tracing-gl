@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
 
         rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
         rtgl::HMesh quadMesh2 = rtgl::CreateMesh(quadBuffer,{3.0f,0.0f,-10.0f},{0.0f,0.0f,45.0f},{1.0f,1.0f,1.0f});
+        rtgl::HMesh quadMesh3 = rtgl::CreateMesh(quadBuffer,{-3.0f,0.0f,-10.0f},{0.0f,0.0f,45.0f},{1.0f,1.0f,1.0f});
 
 
         /** MAIN LOOP **/
@@ -140,6 +141,7 @@ int main(int argc, char* argv[])
 
             rtgl::SetMesh(quadMesh1);
             rtgl::SetMesh(quadMesh2);
+            rtgl::SetMesh(quadMesh3);
 
             // Трасировка сцены
             rtgl::RenderScene();

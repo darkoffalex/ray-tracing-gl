@@ -1,5 +1,8 @@
 #version 430 core
 
+#define MAX_TRIANGLES_PREPARE 1000  // Максимальное кол-во хранимых треугольников
+#define MAX_MESHES_PREPARE 1000     // Максимальное кол-во хранимых мешей
+
 /*Схема входа-выхода*/
 
 layout (location = 0) out vec4 color;
@@ -29,19 +32,42 @@ struct Ray
     float weight;
 };
 
+struct BoundingBox
+{
+    vec3 min;
+    vec3 max;
+};
+
+struct Mesh
+{
+    uint triangleOffstet; //1
+    uint triangleCount;  //1
+    BoundingBox bbox; //8
+};
+
 /*Uniform*/
 
 uniform vec3 _camPosition;
 uniform float _aspectRatio;
 uniform float _fov;
 
+/*Uniform-буферы*/
+
+layout(std140, binding = 2) uniform meshBuffer {
+    Mesh _meshes[MAX_MESHES_PREPARE];
+};
+
+layout(std140, binding = 3) uniform meshCountBuffer {
+    uint _totalMeshes;
+};
+
 /*SSBO-буферы*/
 
-layout(std140, binding=0) buffer triangleBuffer {
+layout(std140, binding = 0) buffer triangleBuffer {
     Triangle _triangles[];
 };
 
-layout(binding=1, offset=0) uniform atomic_uint _triangleCounter;
+layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounter;
 
 /*Вход*/
 
@@ -157,27 +183,34 @@ void main()
     // Результирующий цвет
     vec3 resultColor = vec3(0.0f);
 
-    // Количество треугольников на основании данных атомарного счетчика
-    uint triangleCount = atomicCounter(_triangleCounter);
-
-    // Пройтись по треугольникам
-    for(int i = 0; i < triangleCount; i++)
+    // Проход по всем мешам сцены (если они есть)
+    if(_totalMeshes > 0)
     {
-        // Точка пересечения в (в пространстве наблюдателя)
-        vec3 intersectionPoint;
-        // Дистанция до точки пересечения
-        float distance;
-        // Барицентрические координаты треугольника (для интреполяции)
-        vec2 barycentric;
-
-        // Если пересечение засчитано
-        if(intersectsTriangle(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+        for(uint j = 0; j < _totalMeshes; j++)
         {
-            // Интерполированные значения треугольника
-            Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+            // Получить текущий меш
+            Mesh mesh = _meshes[j];
 
-            // Используем интерполированный цвет
-            resultColor = interpolated.color;
+            // Проход по треугольникам меша
+            for(uint i = _meshes[j].triangleOffstet; i < _meshes[j].triangleCount; i++)
+            {
+                // Точка пересечения в (в пространстве наблюдателя)
+                vec3 intersectionPoint;
+                // Дистанция до точки пересечения
+                float distance;
+                // Барицентрические координаты треугольника (для интреполяции)
+                vec2 barycentric;
+
+                // Если пересечение засчитано
+                if(intersectsTriangle(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+                {
+                    // Интерполированные значения треугольника
+                    Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+
+                    // Используем интерполированный цвет
+                    resultColor = interpolated.color;
+                }
+            }
         }
     }
 

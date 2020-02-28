@@ -33,11 +33,11 @@ uniform float _materialRoughness;                  // Шероховатость
 
 /*SSBO-буферы*/
 
-layout(std140, binding=0) buffer triangleBuffer {
+layout(std140, binding = 0) buffer triangleBuffer {
     Triangle _triangles[];
 };
 
-layout(binding=1, offset=0) uniform atomic_uint _triangleCounter;
+layout(binding=1, offset = 0) uniform atomic_uint _triangleCounter;
 
 /*Вход*/
 
