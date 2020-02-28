@@ -160,15 +160,14 @@ Vertex interpolatedVertex(Vertex[3] vertices, vec2 barycentric)
     return result;
 }
 
-// Основная функция фрагментного шейдера
-// Здесь осуществляется трассировка луча исходящего из конкретного фрагмента
-void main()
+// Основная функция каста луча
+bool castRay(Ray ray, out vec3 resultColor)
 {
-    // Луч исходящий из текущего фрагмента
-    Ray ray = Ray(vec3(0.0f),rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
+    // Засчитано ли пересечение треугольником
+    bool intersceted = false;
 
-    // Результирующий цвет
-    vec3 resultColor = vec3(0.0f);
+    // Минимальное расстояение до пересечения изначально "бесконечно" велико
+    float minIntersectionDist = 3.402823466e+38;
 
     // Количество треугольников на основании данных атомарного счетчика
     uint triangleCount = atomicCounter(_triangleCounter);
@@ -186,13 +185,37 @@ void main()
         // Если пересечение засчитано
         if(intersectsTriangle(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
         {
-            // Интерполированные значения треугольника
-            Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+            // Если расстояние до треугольника меньше расстояния до прежнего пересечния
+            if(distance < minIntersectionDist)
+            {
+                // Вычисление итогового цвета
+                Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+                vec3 finalyCalculatedColor = interpolated.color;
 
-            // Используем интерполированный цвет
-            resultColor = interpolated.color;
+                // Учитваем "вес" луча и отдаем цвет
+                resultColor = finalyCalculatedColor * ray.weight;
+
+                // Считать засчитанным
+                intersceted = true;
+                minIntersectionDist = distance;
+            }
         }
     }
+
+    return intersceted;
+}
+
+// Основная функция фрагментного шейдера
+// Здесь осуществляется трассировка луча исходящего из конкретного фрагмента
+void main()
+{
+    // Луч исходящий из текущего фрагмента
+    Ray ray = Ray(vec3(0.0f),rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
+
+    // Результирующий цвет
+    vec3 resultColor = vec3(0.0f);
+
+    castRay(ray, resultColor);
 
     color = vec4(resultColor, 1.0f);
 }
