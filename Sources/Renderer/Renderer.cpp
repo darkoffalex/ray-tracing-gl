@@ -130,42 +130,6 @@ namespace rtgl
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
             }
 
-            /// Uniform-буферы
-            {
-                // Считаем что индексы привязок заданы в шейдере явно
-                GLuint meshesBufferBinding = 2;
-                GLuint meshesBufferBindingCount = 3;
-
-                // Создать UBO для структур мешей
-                // При вызове каждой функции отрисовеи меша его треугольники записываются буфер треугольников
-                // А буфер мешей пополняется на одну структуру, содержающую offset и count в буфере треугольников
-                // Также структура меша может содержать информацию о bounding box'е меша
-                glGenBuffers(1, &_meshesBuffer);
-                glBindBuffer(GL_UNIFORM_BUFFER, _meshesBuffer);
-                // По предварительным подсчетам на одну структуру надо 48 байт (с учетом выравнивания std 140)
-                glBufferData(GL_UNIFORM_BUFFER, 48 * MAX_MESHES_PREPARE, nullptr, GL_DYNAMIC_DRAW);
-                glBindBufferBase(GL_UNIFORM_BUFFER,meshesBufferBinding,_meshesBuffer);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-                // Создать UBO для текущего кол-ва мешей (для возможности итерации в шейдере)
-                glGenBuffers(1,&_meshesCountBuffer);
-                glBindBuffer(GL_UNIFORM_BUFFER, _meshesCountBuffer);
-                glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
-                glBindBufferBase(GL_UNIFORM_BUFFER,meshesBufferBindingCount,_meshesCountBuffer);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
-            }
-
-            /// Вспомогательные буферы
-            {
-                // Используется для промежуточного копирования данных о текущем кол-ве треугольников в буфере треугольников
-                // Мапинг буфера атомарного счетчика напрямую, чтобы счиать значение - очень медленная операция
-                // Быстрее будет скопировать во временный буфер, для последующего извлечения
-                glGenBuffers(1, &_triangleBufferCounterTmp);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, _triangleBufferCounterTmp);
-                glBufferData(GL_COPY_WRITE_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_COPY);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-            }
-
             /// Кадровые буферы
             {
                 // Разрешение экрана
@@ -335,17 +299,9 @@ namespace rtgl
                 glUseProgram(_shaderPrograms[RS_GEOMETRY_PREPARE]->getId());
 
                 // Сброс атомарного счетчика треугольников в SSBO
-                _triangleCount = 0;
-                _triangleCountPrevious = 0;
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterBuffer);
-                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &_triangleCount);
+                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &INITIAL_ZERO);
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-
-                // Сброс счетчика мешей
-                _meshesCount = 0;
-                glBindBuffer(GL_UNIFORM_BUFFER, _meshesCountBuffer);
-                glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint), &_meshesCount);
-                glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
                 // Сменить идентификатор последного прохода
                 _lastRenderingStage = RS_GEOMETRY_PREPARE;
@@ -367,33 +323,6 @@ namespace rtgl
 
             // Ожидаем завершения работы с вершинами
             glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
-
-            // Получить доступ к кол-ву треугольников записанных в буфер на данный момент
-            glCopyNamedBufferSubData(_triangleCounterBuffer,_triangleBufferCounterTmp,0,0,sizeof(GLuint));
-            glBindBuffer(GL_COPY_WRITE_BUFFER, _triangleBufferCounterTmp);
-            _triangleCount = *(reinterpret_cast<GLuint*>(glMapBufferRange(GL_COPY_WRITE_BUFFER, 0, sizeof(GLuint),GL_MAP_READ_BIT)));
-            glUnmapBuffer(GL_COPY_WRITE_BUFFER);
-
-            // Запись очередного меша со смещением в UBO
-            GLuint offset = _meshesCount * 48;
-            glBindBuffer(GL_UNIFORM_BUFFER, _meshesBuffer);
-            glBufferSubData(GL_UNIFORM_BUFFER, offset, 4, &_triangleCountPrevious);
-            glBufferSubData(GL_UNIFORM_BUFFER, offset + 4, 4, &_triangleCount);
-            glBufferSubData(GL_UNIFORM_BUFFER, offset + 8, 16, nullptr);
-            glBufferSubData(GL_UNIFORM_BUFFER, offset + 24, 16, nullptr);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-            // Увеличиваем кол-во нарисованых мешей
-            _meshesCount++;
-
-            // Запись кол-во отрисованных мешей в UBO счетчика мешей
-            glBindBuffer(GL_UNIFORM_BUFFER, _meshesCountBuffer);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint), &_meshesCount);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-
-            // Кол-во треугольников предыдущего раза теперь равно кол-ву треугольников текущего раза
-            _triangleCountPrevious = _triangleCountPrevious;
         }
         catch(std::exception& ex)
         {

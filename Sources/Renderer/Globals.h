@@ -64,21 +64,7 @@ namespace rtgl
     GLuint _triangleBuffer = 0;
     GLuint _triangleCounterBuffer = 0;
 
-    // Буфер для копирования значения атомарного счетчика
-    GLuint _triangleBufferCounterTmp = 0;
-
-    // Uniform-буферы (для хранения мешей, их кол-ва и источников света)
-    GLuint _meshesBuffer = 0;
-    GLuint _meshesCountBuffer = 0;
-
     /** Рендеринг **/
-
-    // Кол-во мешей
-    GLuint _meshesCount = 0;
-
-    // Кол-во треугольников
-    GLuint _triangleCount = 0;
-    GLuint _triangleCountPrevious = 0;
 
     // Идентификатор последнего этапа (прохода)
     RenderingStage _lastRenderingStage = RenderingStage::RS_NONE;
