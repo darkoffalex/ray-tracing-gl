@@ -375,13 +375,14 @@ namespace rtgl
             }
 
             // Передача матриц в шейдер
-            glUniformMatrix4fv(
-                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->view,
-                    1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
+            glUniformMatrix4fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->view, 1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
+            glUniformMatrix4fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->model,1, GL_FALSE, glm::value_ptr(pMesh->getModelMatrix()));
 
-            glUniformMatrix4fv(
-                    _shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->model,
-                    1, GL_FALSE, glm::value_ptr(pMesh->getModelMatrix()));
+            // Передача информации о материале в шейдер
+            glUniform3fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialAlbedo, 1, glm::value_ptr(pMesh->material.albedo));
+            glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialMetallic, pMesh->material.metallic);
+            glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialRoughness, pMesh->material.roughness);
+
 
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(pMesh->geometry->getVaoId());
@@ -444,6 +445,8 @@ namespace rtgl
             glUniform1f(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->aspectRatio,_camera->getAspectRatio());
             // Передать положение камеры
             glUniform3fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->camPosition, 1, glm::value_ptr(_camera->getPosition()));
+            // Передать матрицу вида для преобразования положений источников света в пространство вида
+            glUniformMatrix4fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->view, 1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
 
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(_geometryQuad->getVaoId());

@@ -34,6 +34,17 @@ struct Ray
     float weight;
 };
 
+struct NearestIntersectionInfo
+{
+    vec3 position;
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float primaryToSecondaryRatio;
+    float reflectToRefractRatio;
+    Vertex interpolated;
+};
+
 struct LightSource
 {
     vec3 position;
@@ -52,6 +63,7 @@ struct LightSource
 uniform vec3 _camPosition;
 uniform float _aspectRatio;
 uniform float _fov;
+uniform mat4 _view;
 
 /*SSBO-буферы*/
 
@@ -113,7 +125,7 @@ bool intersectsTriangle(Vertex[3] vertices, Ray ray, out vec3 intersectionPoint,
             distance = t;
 
             // Вычисляем положение точки пересечения
-            intersectionPoint = ray.origin + (ray.direction * t);
+            intersectionPoint = ray.origin + (normalize(ray.direction) * t);
 
             // Далее нужно определить находится ли точка нутри треугольника а также получить ее
             // барицентрические координаты для дальнейшего вычисления интерполированных значений
@@ -189,6 +201,9 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
     // Количество треугольников на основании данных атомарного счетчика
     uint triangleCount = atomicCounter(_triangleCounter);
 
+    // Информация о ближайшем пересечении
+    NearestIntersectionInfo nearestIntersection;
+
     // Пройтись по треугольникам
     for(int i = 0; i < triangleCount; i++)
     {
@@ -205,18 +220,54 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
             // Если расстояние до треугольника меньше расстояния до прежнего пересечния
             if(distance < minIntersectionDist)
             {
-                // Вычисление итогового цвета
-                Vertex interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
-                vec3 finalyCalculatedColor = interpolated.color;
-
-                // Учитваем "вес" луча и отдаем цвет
-                resultColor += (finalyCalculatedColor * ray.weight);
+                // Информация о пересечениии
+                nearestIntersection.position = intersectionPoint;
+                nearestIntersection.albedo = _triangles[i].albedo;
+                nearestIntersection.metallic = _triangles[i].metallic;
+                nearestIntersection.roughness = _triangles[i].roughness;
+                nearestIntersection.primaryToSecondaryRatio = 1.0f;
+                nearestIntersection.reflectToRefractRatio = 1.0f;
+                nearestIntersection.interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
 
                 // Считать засчитанным
                 intersceted = true;
                 minIntersectionDist = distance;
             }
         }
+    }
+
+    // Если пересечени засчитано
+    if(intersceted)
+    {
+        // Собственный цвет поверхности
+        vec3 finalyCalculatedColor = vec3(0.0f);
+
+        // Пройтись по источникам света
+        for(uint i = 0; i < _totalLights; i++)
+        {
+            // Нормаль в точке пересечения
+            vec3 normal = normalize(nearestIntersection.interpolated.normal);
+
+            // Положение источника в пространстве вида
+            vec3 lightPosView = (_view * vec4(_lightSources[i].position,1.0f)).xyz;
+
+            // Направление от точки пересечения к источнику
+            vec3 toLight = normalize(lightPosView - nearestIntersection.position);
+
+            // Отраженный вектор падения света на точку пересечения
+            vec3 reflected = reflect(-toLight, normal);
+
+            // Вычисление дифузной компоненты
+            vec3 diffuse = nearestIntersection.albedo * max(dot(toLight,normal),0.0f);
+            // Вычисление бликовой компоненты
+            vec3 specular = vec3(1.0f,1.0f,1.0f) * pow(max(dot(-reflected, ray.direction),0.0f),32.0f);
+
+            // Итоговый цвет
+            finalyCalculatedColor = diffuse + specular;
+        }
+
+        //vec3 finalyCalculatedColor = nearestIntersection.interpolated.color;
+        resultColor += (finalyCalculatedColor * ray.weight);
     }
 
     return intersceted;

@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
 
         // Геометрия
         rtgl::Vertex<float> vertices[4] = {
-                { { 1.0f,0.0f,-1.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,0.0f,1.0f} },
-                { { 1.0f,0.0f,1.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,0.0f,1.0f} },
-                { { -1.0f,0.0f,1.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,0.0f,1.0f} },
-                { { -1.0f,0.0f,-1.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,0.0f,1.0f} },
+                { { 1.0f,0.0f,-1.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,1.0f,0.0f} },
+                { { 1.0f,0.0f,1.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,1.0f,0.0f} },
+                { { -1.0f,0.0f,1.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,1.0f,0.0f} },
+                { { -1.0f,0.0f,-1.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,1.0f,0.0f} },
         };
         unsigned indices[6] = { 0,1,2, 0,2,3 };
 
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
         rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{3.0f,1.0f,3.0f});
         rtgl::HMesh lightSource1 = rtgl::CreateLightSource({0.0f,2.0f,0.0f});
-        rtgl::SetCameraSettings({0.0f,2.0f,5.0f},{-20.0f,0.0f,0.0f});
+        rtgl::SetCameraSettings({0.0f,3.0f,5.0f},{-25.0f,0.0f,0.0f});
 
         /** MAIN LOOP **/
 
