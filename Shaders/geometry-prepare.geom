@@ -1,6 +1,7 @@
 #version 430 core
 
-#define MAX_TRIANGLES_PREPARE 1000  // Максимальное кол-во хранимых треугольников
+// Максимальное кол-во хранимых треугольников
+#define MAX_TRIANGLES_PREPARE 1000
 
 /*Схема входа-выхода*/
 

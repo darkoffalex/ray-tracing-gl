@@ -9,6 +9,7 @@
 #include "Interface/SceneElementInterface.h"
 #include "Interface/GeometryBufferInterface.h"
 #include "Interface/MeshInterface.h"
+#include "Interface/LightSourceInterface.h"
 
 namespace rtgl
 {
@@ -61,6 +62,13 @@ namespace rtgl
         RENDERER_LIB_API bool __cdecl SetCameraOrientation(const Vec3<float>& orientation);
 
         /// Р Е Н Д Е Р И Н Г
+
+        /**
+         * Добавление источника света на сцену (UBO-буфер источников света)
+         * @param lightSource Хендл источника
+         * @return Состояние операции
+         */
+        RENDERER_LIB_API bool __cdecl SetLightSource(HLightSource lightSource);
 
         /**
          * Добавление меша в геометрический буфер (SSBO-буфер треугольников)

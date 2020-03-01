@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
 
         // Геометрия
         rtgl::Vertex<float> vertices[4] = {
-                { { 1.0f,1.0f,0.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,0.0f,1.0f} },
-                { { 1.0f,-1.0f,0.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,0.0f,1.0f} },
-                { { -1.0f,-1.0f,0.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,0.0f,1.0f} },
-                { { -1.0f,1.0f,0.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,0.0f,1.0f} },
+                { { 1.0f,0.0f,-1.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,0.0f,1.0f} },
+                { { 1.0f,0.0f,1.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,0.0f,1.0f} },
+                { { -1.0f,0.0f,1.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,0.0f,1.0f} },
+                { { -1.0f,0.0f,-1.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,0.0f,1.0f} },
         };
         unsigned indices[6] = { 0,1,2, 0,2,3 };
 
@@ -98,10 +98,9 @@ int main(int argc, char* argv[])
 
         /** Рендерер - объекты сцены **/
 
-        rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,-5.0f},{0.0f,0.0f,0.0f},{1.0f,1.0f,1.0f});
-        rtgl::HMesh quadMesh2 = rtgl::CreateMesh(quadBuffer,{3.0f,0.0f,-10.0f},{0.0f,0.0f,45.0f},{1.0f,1.0f,1.0f});
-        rtgl::HMesh quadMesh3 = rtgl::CreateMesh(quadBuffer,{-3.0f,0.0f,-10.0f},{0.0f,0.0f,45.0f},{1.0f,1.0f,1.0f});
-
+        rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{3.0f,1.0f,3.0f});
+        rtgl::HMesh lightSource1 = rtgl::CreateLightSource({0.0f,2.0f,0.0f});
+        rtgl::SetCameraSettings({0.0f,2.0f,5.0f},{-20.0f,0.0f,0.0f});
 
         /** MAIN LOOP **/
 
@@ -135,13 +134,13 @@ int main(int argc, char* argv[])
 
             /// Обновление сцены
 
-            //rtgl::SetCameraPosition({0.0f,0.0f,0.0f});
+            //TODO: Обновление сцены и управление камерой
 
             /// Отрисовка и показ кадра
 
             rtgl::SetMesh(quadMesh1);
-            rtgl::SetMesh(quadMesh2);
-            rtgl::SetMesh(quadMesh3);
+
+            rtgl::SetLightSource(lightSource1);
 
             // Трасировка сцены
             rtgl::RenderScene();

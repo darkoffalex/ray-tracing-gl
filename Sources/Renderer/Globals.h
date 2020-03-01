@@ -16,13 +16,14 @@
 namespace rtgl
 {
     /** Константны **/
-
+    // Константа значение которой используется для обнуления буферов
+    const unsigned INITIAL_ZERO = 0;
     // Максимальное кол-во треугольников, которые могут быть записаны в буфер на этапе подготовки геометрии
     const unsigned MAX_TRIANGLES_PREPARE = 1000;
     // Максимальное кол-во мешей, которые могут быть записаны в буфер на этапе подготовки геометрии
     const unsigned MAX_MESHES_PREPARE = 1000;
-    // Константа значение которой используется для обнуления буферов
-    const unsigned INITIAL_ZERO = 0;
+    // Максимальное кол-во источников освещения (определяет размер UBO для структуры источника)
+    const unsigned MAX_LIGHTS = 10;
 
     /** Состояние и инициализация **/
 
@@ -64,9 +65,16 @@ namespace rtgl
     GLuint _triangleBuffer = 0;
     GLuint _triangleCounterBuffer = 0;
 
+    // Буферы UBO для передачи информации об источниках света и прочих настрйоках
+    GLuint _lightSourcesBuffer = 0;
+    GLuint _commonSettingsBuffer = 0;
+
     /** Рендеринг **/
 
     // Идентификатор последнего этапа (прохода)
     RenderingStage _lastRenderingStage = RenderingStage::RS_NONE;
+
+    // Кол-во источников света добавленных на сцены в данный момент
+    GLuint _lightSourceCount = 0;
 
 }

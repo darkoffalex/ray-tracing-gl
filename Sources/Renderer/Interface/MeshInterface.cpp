@@ -74,4 +74,32 @@ namespace rtgl
 
         return true;
     }
+
+    /**
+     * Уствнока параметров материала меша (PBR)
+     * @param mesh Дескриптор меша
+     * @param albedo Альбедо-цвет (аналог diffuse)
+     * @param metallic Металличность
+     * @param roughness Шероховатость
+     * @return Состояние операции
+     */
+    bool __cdecl SetMeshMaterialSettings(HMesh mesh, const Vec3<float> &albedo, const float &metallic, const float &roughness)
+    {
+        try
+        {
+            if(!_bInitialized) throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
+            const auto pMesh = reinterpret_cast<Mesh*>(mesh);
+            pMesh->material.albedo = {albedo.r,albedo.g,albedo.b};
+            pMesh->material.metallic = metallic;
+            pMesh->material.roughness = roughness;
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
 }

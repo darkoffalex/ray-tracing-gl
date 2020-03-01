@@ -1,5 +1,10 @@
 #version 430 core
 
+// Максимальное кол-во лучей
+#define MAX_RAYS 5
+// Максимальное кол-во источников
+#define MAX_LIGHTS 10
+
 /*Схема входа-выхода*/
 
 layout (location = 0) out vec4 color;
@@ -29,17 +34,17 @@ struct Ray
     float weight;
 };
 
-struct BoundingBox
+struct LightSource
 {
-    vec3 min;
-    vec3 max;
-};
-
-struct Mesh
-{
-    uint triangleOffstet; //1
-    uint triangleCount;  //1
-    BoundingBox bbox; //8
+    vec3 position;
+    float radius;
+    vec3 color;
+    vec3 orientation;
+    float attenuationQuadratic;
+    float attenuationLinear;
+    float cutOffAngleCos;
+    float cutOffOuterAngleCos;
+    uint type;
 };
 
 /*Uniform*/
@@ -55,6 +60,18 @@ layout(std140, binding = 0) buffer triangleBuffer {
 };
 
 layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounter;
+
+/*Uniform-буферы*/
+
+layout (std140, binding = 2) uniform lights
+{
+    LightSource _lightSources[MAX_LIGHTS];
+};
+
+layout (std140, binding = 3) uniform commonSettings
+{
+    uint _totalLights;
+};
 
 /*Вход*/
 
@@ -161,7 +178,7 @@ Vertex interpolatedVertex(Vertex[3] vertices, vec2 barycentric)
 }
 
 // Основная функция каста луча
-bool castRay(Ray ray, out vec3 resultColor)
+bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint totalRays)
 {
     // Засчитано ли пересечение треугольником
     bool intersceted = false;
@@ -193,7 +210,7 @@ bool castRay(Ray ray, out vec3 resultColor)
                 vec3 finalyCalculatedColor = interpolated.color;
 
                 // Учитваем "вес" луча и отдаем цвет
-                resultColor = finalyCalculatedColor * ray.weight;
+                resultColor += (finalyCalculatedColor * ray.weight);
 
                 // Считать засчитанным
                 intersceted = true;
@@ -209,13 +226,22 @@ bool castRay(Ray ray, out vec3 resultColor)
 // Здесь осуществляется трассировка луча исходящего из конкретного фрагмента
 void main()
 {
-    // Луч исходящий из текущего фрагмента
-    Ray ray = Ray(vec3(0.0f),rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
-
     // Результирующий цвет
     vec3 resultColor = vec3(0.0f);
 
-    castRay(ray, resultColor);
+    // Изначальный набор лучей содержит только один луч начальный луч
+    // В процессе каста в случае н еобходимости набор может пополнятся лучами
+    Ray rays[MAX_RAYS];
+    rays[0] = Ray(vec3(0.0f),rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
+
+    // Всего лучей на данный момент
+    uint totalRays = 1;
+
+    // Проход по всем лучам
+    for(uint i = 0; i < MAX_RAYS; i++)
+    {
+        if(i < totalRays) castRay(rays[i], resultColor, rays, totalRays);
+    }
 
     color = vec4(resultColor, 1.0f);
 }

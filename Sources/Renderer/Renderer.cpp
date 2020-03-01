@@ -7,6 +7,7 @@
 #include "Globals.h"
 
 #include "Scene/Mesh.h"
+#include "Scene/LightSource.h"
 
 #include <GL/glew.h>
 #include <glm/gtc/type_ptr.inl>
@@ -130,6 +131,27 @@ namespace rtgl
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
             }
 
+            /// Инициализация UBO-буферов
+            {
+                // Считаем что индексы привязок заданы в шейдере явно
+                GLuint lightSourcesBufferBinding = 2;
+                GLuint commonSettingsBufferBinding = 3;
+
+                // Создать UBO для массив структур источников света
+                glGenBuffers(1, &_lightSourcesBuffer);
+                glBindBuffer(GL_UNIFORM_BUFFER, _lightSourcesBuffer);
+                glBufferData(GL_UNIFORM_BUFFER, 64 * MAX_LIGHTS, nullptr, GL_STREAM_DRAW);
+                glBindBufferBase(GL_UNIFORM_BUFFER, lightSourcesBufferBinding, _lightSourcesBuffer);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+                // Создать UBO для общих настроек и параметров
+                glGenBuffers(1, &_commonSettingsBuffer);
+                glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
+                glBufferData(GL_UNIFORM_BUFFER, 16, nullptr, GL_STATIC_DRAW);
+                glBindBufferBase(GL_UNIFORM_BUFFER, commonSettingsBufferBinding, _commonSettingsBuffer);
+                glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            }
+
             /// Кадровые буферы
             {
                 // Разрешение экрана
@@ -190,6 +212,10 @@ namespace rtgl
         // Уничтожение SSBO (Storage Buffer)
         GLuint ssbo[2] = {_triangleBuffer, _triangleCounterBuffer};
         glDeleteBuffers(2, ssbo);
+
+        // Уничтожение UBO (Uniform Buffer)
+        GLuint ubo[2] = {_lightSourcesBuffer, _commonSettingsBuffer};
+        glDeleteBuffers(2, ubo);
 
         // Уничтожение геометрии по умолчанию
         delete _geometryQuad;
@@ -270,6 +296,45 @@ namespace rtgl
     /// Р Е Н Д Е Р И Н Г
 
     /**
+     * Добавление источника света на сцену (UBO-буфер источников света)
+     * @param lightSource Хендл источника
+     * @return Состояние операции
+     */
+    bool __cdecl SetLightSource(HLightSource lightSource)
+    {
+        try
+        {
+            // Указатель на источник света
+            auto pLightSource = reinterpret_cast<LightSource*>(lightSource);
+
+            // Проверка на готовность к операции
+            if(!_bInitialized)
+                throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
+            if(pLightSource == nullptr)
+                throw std::runtime_error("No light source provided");
+
+            // Запись источника в буфер
+            pLightSource->writeToUniformBufferStd140(_lightSourcesBuffer,_lightSourceCount * 64);
+
+            // Увеличение кол-ва источников света
+            _lightSourceCount++;
+
+            // Обновить количество источников света в uniform-буфере
+            glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, 4, &_lightSourceCount);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        }
+        catch(std::exception& ex)
+        {
+            _strLastErrorMsg = ex.what();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Добавление меша в геометрический буфер (SSBO-буфер треугольников)
      * @param mesh Хендл меша
      * @return Состояние операции
@@ -284,8 +349,10 @@ namespace rtgl
             // Проверка на готовность к операции
             if(!_bInitialized)
                 throw std::runtime_error("Library isn't initialized. Please call rtgl::Init fist.");
+
             if(_shaderPrograms[RS_GEOMETRY_PREPARE] == nullptr)
                 throw std::runtime_error("No required shader set");
+
             if(pMesh == nullptr)
                 throw std::runtime_error("No mesh provided");
 
@@ -382,6 +449,13 @@ namespace rtgl
             glBindVertexArray(_geometryQuad->getVaoId());
             glDrawElements(GL_TRIANGLES, _geometryQuad->getIndexCount(), GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
+
+            // Обнулить кол-во источников света
+            _lightSourceCount = 0;
+            // Обнулить количество источников света в uniform-буфере
+            glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, 4, &_lightSourceCount);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
         catch(std::exception& ex)
         {

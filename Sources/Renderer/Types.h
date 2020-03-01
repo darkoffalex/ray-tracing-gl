@@ -20,6 +20,7 @@ namespace rtgl
     typedef void* HGeometryBuffer;
     typedef void* HSceneElement;
     typedef void* HMesh;
+    typedef void* HLightSource;
 
     /// П Е Р Е Ч И С Л Я Е М Ы Е
 
@@ -34,6 +35,12 @@ namespace rtgl
      * Используется в классе камеры при построении матрицы проекции
      */
     enum ProjectionType { PROJ_PERSPECTIVE, PROJ_ORTHOGRAPHIC };
+
+    /**
+     * Типы источников света
+     * Используется для указания типа при добавлении источника на сцену
+     */
+    enum LightSourceType { LIGHT_POINT, LIGHT_SPOT, LIGHT_DIRECTIONAL };
 
     /**
      * Этапы рендеринга сцены (проходы)
