@@ -12,23 +12,6 @@ namespace win_tools
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Обработчик оконных сообщений
-     * @param hWnd Дескриптор окна
-     * @param message Сообщение
-     * @param wParam Параметр сообщения
-     * @param lParam Параметр сообщения
-     * @return Код выполнения
-     */
-    LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-        if(message == WM_DESTROY){
-            PostQuitMessage(0);
-            return 0;
-        }
-
-        return DefWindowProc(hWnd,message,wParam,lParam);
-    }
-
-    /**
      * Регистрация оконного класса
      * @param strClassName Наименование класса
      * @param pfnWindowProcedure Указатель на оконную процедуру

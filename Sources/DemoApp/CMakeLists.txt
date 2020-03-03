@@ -15,12 +15,13 @@ set(TARGET_BIN_NAME "DemoApp")
 # Добавляем .exe (проект в Visual Studio)
 add_executable(${TARGET_NAME}
         "Main.cpp"
-        "WinTools.h"
-        "WinTools.cpp"
-        "Tools.cpp"
-        "Tools.h"
-        "Timer.cpp"
-        "Timer.h")
+        "WinTools.h" "WinTools.cpp"
+        "Tools.cpp" "Tools.h"
+        "Timer.cpp" "Timer.h"
+        "RtglTools.cpp" "RtglTools.h"
+        "Math.hpp"
+        "Camera.cpp" "Camera.h"
+        "Controls.cpp" "Controls.h")
 
 # Меняем название запускаемого файла в зависимости от типа сборки
 set_property(TARGET ${TARGET_NAME} PROPERTY OUTPUT_NAME "${TARGET_BIN_NAME}$<$<CONFIG:Debug>:_Debug>")

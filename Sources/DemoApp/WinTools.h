@@ -1,20 +1,13 @@
 #pragma once
 
+#include "Controls.h"
+
 #include <stdexcept>
 #include <windows.h>
 #include <GL/gl.h>
 
 namespace win_tools
 {
-    /**
-     * Обработчик оконных сообщений
-     * @param hWnd Дескриптор окна
-     * @param message Сообщение
-     * @param wParam Параметр сообщения
-     * @param lParam Параметр сообщения
-     * @return Код выполнения
-     */
-    LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
     /**
      * Регистрация оконного класса

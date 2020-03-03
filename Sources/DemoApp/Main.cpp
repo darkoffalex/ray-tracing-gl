@@ -4,6 +4,9 @@
 #include "WinTools.h"
 #include "Tools.h"
 #include "Timer.h"
+#include "RtglTools.h"
+#include "Camera.h"
+
 #include "../Renderer/Renderer.h"
 
 /// Дескриптор исполняемого модуля программы
@@ -16,6 +19,8 @@ HDC _hdc = nullptr;
 HGLRC _hglrc = nullptr;
 /// Таймер
 Timer* _timer = nullptr;
+/// Камера (объект контроля камеры)
+Camera* _camera = nullptr;
 
 /**
  * Точка входа
@@ -68,6 +73,11 @@ int main(int argc, char* argv[])
         // Отключение вертикальной синхронизации OpenGL
         win_tools::OpenGlSetVSync(false);
 
+        // Камера
+        _camera = new Camera();
+        _camera->position = {0.0f,3.0f,5.0f};
+        _camera->orientation = {-25.0f,0.0f,0.0f};
+
         /** Рендерер - инициализация **/
 
         // Загрзить исходный код шейдеров
@@ -86,21 +96,17 @@ int main(int argc, char* argv[])
         /** Рендерер - загрузка ресурсов **/
 
         // Геометрия
-        rtgl::Vertex<float> vertices[4] = {
-                { { 1.0f,0.0f,-1.0f },{ 1.0f,0.0f,0.0f },{ 1.0f,1.0f }, {0.0f,1.0f,0.0f} },
-                { { 1.0f,0.0f,1.0f },{ 0.0f,1.0f,0.0f },{ 1.0f,0.0f }, {0.0f,1.0f,0.0f} },
-                { { -1.0f,0.0f,1.0f },{ 0.0f,0.0f,1.0f },{ 0.0f,0.0f }, {0.0f,1.0f,0.0f} },
-                { { -1.0f,0.0f,-1.0f },{ 1.0f,1.0f,0.0f },{ 0.0f,1.0f }, {0.0f,1.0f,0.0f} },
-        };
-        unsigned indices[6] = { 0,1,2, 0,2,3 };
-
-        rtgl::HGeometryBuffer quadBuffer = rtgl::CreateGeometryBuffer(vertices,4,indices,6);
+        rtgl::HGeometryBuffer quadBuffer = rtgl::GenerateQuadGeometry(2.0f);
+        rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
 
         /** Рендерер - объекты сцены **/
 
-        rtgl::HMesh quadMesh1 = rtgl::CreateMesh(quadBuffer,{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{3.0f,1.0f,3.0f});
+        // Меши
+        rtgl::HMesh mesh1 = rtgl::CreateMesh(quadBuffer,{0.0f, 0.0f, 0.0f},{-90.0f, 0.0f, 0.0f},{3.0f, 3.0f, 1.0f});
+        rtgl::HMesh mesh2 = rtgl::CreateMesh(cubeBuffer,{1.0f, 0.5f, 1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
+
+        // Геометрия
         rtgl::HMesh lightSource1 = rtgl::CreateLightSource({0.0f,2.0f,0.0f});
-        rtgl::SetCameraSettings({0.0f,3.0f,5.0f},{-25.0f,0.0f,0.0f});
 
         /** MAIN LOOP **/
 
@@ -134,12 +140,18 @@ int main(int argc, char* argv[])
 
             /// Обновление сцены
 
-            //TODO: Обновление сцены и управление камерой
+            _camera->translate(_timer->getDelta());
+
+            rtgl::SetCameraSettings(
+                    {_camera->position.x,_camera->position.y,_camera->position.z},
+                    {_camera->orientation.x,_camera->orientation.y,_camera->orientation.z}
+            );
 
             /// Отрисовка и показ кадра
 
-            rtgl::SetMesh(quadMesh1);
-
+            // Заполнения буфера геометрии сцены
+            rtgl::SetMesh(mesh1);
+            rtgl::SetMesh(mesh2);
             rtgl::SetLightSource(lightSource1);
 
             // Трасировка сцены
