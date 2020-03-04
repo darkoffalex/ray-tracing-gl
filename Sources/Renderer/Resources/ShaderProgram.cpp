@@ -56,6 +56,7 @@ namespace rtgl
         this->locations_.materialAlbedo = glGetUniformLocation(id_, "_materialAlbedo");
         this->locations_.materialMetallic = glGetUniformLocation(id_, "_materialMetallic");
         this->locations_.materialRoughness = glGetUniformLocation(id_, "_materialRoughness");
+        this->locations_.meshIndex = glGetUniformLocation(id_,"_meshIndex");
 
         // Этап трассировки
         this->locations_.aspectRatio = glGetUniformLocation(id_, "_aspectRatio");

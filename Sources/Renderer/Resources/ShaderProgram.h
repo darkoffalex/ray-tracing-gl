@@ -21,6 +21,7 @@ namespace rtgl
             GLuint materialAlbedo = 0;
             GLuint materialMetallic = 0;
             GLuint materialRoughness = 0;
+            GLuint meshIndex = 0;
 
             // Этап трассировки
             GLuint aspectRatio = 0;

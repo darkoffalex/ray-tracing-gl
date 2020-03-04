@@ -2,6 +2,8 @@
 
 // Максимальное кол-во хранимых треугольников
 #define MAX_TRIANGLES_PREPARE 10000
+// Максимальное кол-во мешей
+#define MAX_MESHES 10
 
 /*Схема входа-выхода*/
 
@@ -31,6 +33,7 @@ struct Triangle
 uniform vec3 _materialAlbedo;                      // Альбедо-цвет материала
 uniform float _materialMetallic;                   // Металличность материала
 uniform float _materialRoughness;                  // Шероховатость материала
+uniform uint _meshIndex;                           // Индекс текущего меша
 
 /*SSBO-буферы*/
 
@@ -38,7 +41,8 @@ layout(std140, binding = 0) buffer triangleBuffer {
     Triangle _triangles[];
 };
 
-layout(binding=1, offset = 0) uniform atomic_uint _triangleCounter;
+layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounterPerMesh[MAX_MESHES];
+layout(binding = 4, offset = 0) uniform atomic_uint _triangleCounterGlobal;
 
 /*Вход*/
 
@@ -74,8 +78,10 @@ void main()
         triangle.vertices[i].uv = gs_in[i].uv;
     }
 
-    // Получить индекс очерендого треугольника с учетом атомарного счетчика
-    uint triangleIndex = atomicCounterIncrement(_triangleCounter);
+    // Увеличить кол-во треугольников для конкретного меша
+    atomicCounterIncrement(_triangleCounterPerMesh[_meshIndex]);
+    // Увеличить общее кол-во треугольников
+    uint triangleIndex = atomicCounterIncrement(_triangleCounterGlobal);
     // Записать информацию о треугольнике в SSBO
     if(triangleIndex <= MAX_TRIANGLES_PREPARE){
         _triangles[triangleIndex] = triangle;

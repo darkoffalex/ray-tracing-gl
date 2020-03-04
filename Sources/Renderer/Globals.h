@@ -22,6 +22,8 @@ namespace rtgl
     const unsigned MAX_TRIANGLES_PREPARE = 10000;
     // Максимальное кол-во источников освещения (определяет размер UBO для структуры источника)
     const unsigned MAX_LIGHTS = 10;
+    // Максимальное кол-во мешей
+    const unsigned MAX_MESHES = 10;
 
     /** Состояние и инициализация **/
 
@@ -61,7 +63,8 @@ namespace rtgl
 
     // Буфер хранения (SSBO) для геометрии (для параллельной записи используется атомарный счетчик)
     GLuint _triangleBuffer = 0;
-    GLuint _triangleCounterBuffer = 0;
+    GLuint _triangleCounterPerMeshBuffer = 0;
+    GLuint _triangleCounterGlobalBuffer = 0;
 
     // Буферы UBO для передачи информации об источниках света и прочих настрйоках
     GLuint _lightSourcesBuffer = 0;
@@ -72,7 +75,10 @@ namespace rtgl
     // Идентификатор последнего этапа (прохода)
     RenderingStage _lastRenderingStage = RenderingStage::RS_NONE;
 
-    // Кол-во источников света добавленных на сцены в данный момент
+    // Кол-во источников света добавленных на сцену в данный момент
     GLuint _lightSourceCount = 0;
+
+    // Кол-во мешей добавленных на сцену в данный момент
+    GLuint _meshesCount = 0;
 
 }

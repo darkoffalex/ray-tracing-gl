@@ -4,6 +4,8 @@
 #define MAX_RAYS 5
 // Максимальное кол-во источников
 #define MAX_LIGHTS 10
+// Максимальное кол-во мешей
+#define MAX_MESHES 10
 
 /*Схема входа-выхода*/
 
@@ -71,7 +73,7 @@ layout(std140, binding = 0) buffer triangleBuffer {
     Triangle _triangles[];
 };
 
-layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounter;
+layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounterPerMesh[MAX_MESHES];
 
 /*Uniform-буферы*/
 
@@ -83,6 +85,7 @@ layout (std140, binding = 2) uniform lights
 layout (std140, binding = 3) uniform commonSettings
 {
     uint _totalLights;
+    uint _totalMeshes;
 };
 
 /*Вход*/
@@ -238,43 +241,55 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
     // Минимальное расстояение до пересечения изначально "бесконечно" велико
     float minIntersectionDist = 3.402823466e+38;
 
-    // Количество треугольников на основании данных атомарного счетчика
-    uint triangleCount = atomicCounter(_triangleCounter);
-
     // Информация о ближайшем пересечении
     NearestIntersectionInfo nearestIntersection;
 
-    // Пройтись по треугольникам
-    for(int i = 0; i < triangleCount; i++)
+    // Сдвиг в общем буфере треугольников сцены
+    uint triangleOffset = 0;
+
+    // Проход по всем мешам сцены
+    for(uint m = 0; m < _totalMeshes; m++)
     {
-        // Точка пересечения в (в пространстве наблюдателя)
-        vec3 intersectionPoint;
-        // Дистанция до точки пересечения
-        float distance;
-        // Барицентрические координаты треугольника (для интреполяции)
-        vec2 barycentric;
+        //TODO: проверка на bounding box меша
 
-        // Если пересечение засчитано
-        if(intersectsTriangleMT(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+        // Количество треугольников текущего меша
+        uint triangleCount = atomicCounter(_triangleCounterPerMesh[m]);
+
+        // Проход по всем треугольникам меша
+        for(uint i = triangleOffset; i < triangleOffset + triangleCount; i++)
         {
-            // Если расстояние до треугольника меньше расстояния до прежнего пересечния
-            if(distance < minIntersectionDist)
+            // Точка пересечения в (в пространстве наблюдателя)
+            vec3 intersectionPoint;
+            // Дистанция до точки пересечения
+            float distance;
+            // Барицентрические координаты треугольника (для интреполяции)
+            vec2 barycentric;
+
+            // Если пересечение засчитано
+            if(intersectsTriangleMT(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
             {
-                // Информация о пересечениии
-                nearestIntersection.position = intersectionPoint;
-                nearestIntersection.albedo = _triangles[i].albedo;
-                nearestIntersection.metallic = _triangles[i].metallic;
-                nearestIntersection.roughness = _triangles[i].roughness;
-                nearestIntersection.primaryToSecondaryRatio = 1.0f;
-                nearestIntersection.reflectToRefractRatio = 1.0f;
-                nearestIntersection.interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+                // Если расстояние до треугольника меньше расстояния до прежнего пересечния
+                if(distance < minIntersectionDist)
+                {
+                    // Информация о пересечениии
+                    nearestIntersection.position = intersectionPoint;
+                    nearestIntersection.albedo = _triangles[i].albedo;
+                    nearestIntersection.metallic = _triangles[i].metallic;
+                    nearestIntersection.roughness = _triangles[i].roughness;
+                    nearestIntersection.primaryToSecondaryRatio = 1.0f;
+                    nearestIntersection.reflectToRefractRatio = 1.0f;
+                    nearestIntersection.interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
 
-                // Считать засчитанным
-                intersceted = true;
+                    // Считать засчитанным
+                    intersceted = true;
 
-                minIntersectionDist = distance;
+                    minIntersectionDist = distance;
+                }
             }
         }
+
+        // Увеличение сдвига на кол-во треугольников меша
+        triangleOffset += triangleCount;
     }
 
     // Если пересечени засчитано

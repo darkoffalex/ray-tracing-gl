@@ -106,7 +106,8 @@ namespace rtgl
             {
                 // Считаем что индексы привязок заданы в шейдере явно
                 GLuint triangleBufferBinding = 0;
-                GLuint triangleBufferCounterBinding = 1;
+                GLuint triangleBufferCounterPerMeshBinding = 1;
+                GLuint triangleBufferCounterGlobalBinding = 4;
 
                 // Создать SSBO для структур треугольников
                 // Данные записываются в буфер треугольников на этапе подготовки геометрии (RS_GEOMETRY_PREPARE)
@@ -118,16 +119,19 @@ namespace rtgl
                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, triangleBufferBinding, _triangleBuffer);
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-                // Создать атомарный счетчик элементов, который будет увеличиваться при записи элемента в буфер
-                // Атомарные операции позволят корректно увеличивать число невзирая на параллелизм выполнения
-                glGenBuffers(1, &_triangleCounterBuffer);
-                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterBuffer);
+                // Атомарный счетчик для подсчета кол-ва треугольников на каждый отдельный меш
+                glGenBuffers(1, &_triangleCounterPerMeshBuffer);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterPerMeshBuffer);
+                glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * MAX_MESHES, nullptr, GL_DYNAMIC_DRAW);
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, triangleBufferCounterPerMeshBinding, _triangleCounterPerMeshBuffer);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+                // Атомарный счетчик для подсчета общего количества треугольников в буфере треугольников
+                glGenBuffers(1, &_triangleCounterGlobalBuffer);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterGlobalBuffer);
                 glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), nullptr, GL_DYNAMIC_DRAW);
-                // Обнулить счетчик
-                GLuint zero = 0;
-                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &zero);
-                // Активировать привязку и завершить работу с атомарным счетчиком
-                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, triangleBufferCounterBinding, _triangleCounterBuffer);
+                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &INITIAL_ZERO);
+                glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, triangleBufferCounterGlobalBinding, _triangleCounterGlobalBuffer);
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
             }
 
@@ -147,7 +151,7 @@ namespace rtgl
                 // Создать UBO для общих настроек и параметров
                 glGenBuffers(1, &_commonSettingsBuffer);
                 glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
-                glBufferData(GL_UNIFORM_BUFFER, 16, nullptr, GL_STATIC_DRAW);
+                glBufferData(GL_UNIFORM_BUFFER, 16, nullptr, GL_STREAM_DRAW);
                 glBindBufferBase(GL_UNIFORM_BUFFER, commonSettingsBufferBinding, _commonSettingsBuffer);
                 glBindBuffer(GL_UNIFORM_BUFFER, 0);
             }
@@ -210,8 +214,8 @@ namespace rtgl
         delete _screenFrameBuffer;
 
         // Уничтожение SSBO (Storage Buffer)
-        GLuint ssbo[2] = {_triangleBuffer, _triangleCounterBuffer};
-        glDeleteBuffers(2, ssbo);
+        GLuint ssbo[3] = {_triangleBuffer, _triangleCounterPerMeshBuffer, _triangleCounterGlobalBuffer};
+        glDeleteBuffers(3, ssbo);
 
         // Уничтожение UBO (Uniform Buffer)
         GLuint ubo[2] = {_lightSourcesBuffer, _commonSettingsBuffer};
@@ -365,14 +369,19 @@ namespace rtgl
                 // Использовать шейдер
                 glUseProgram(_shaderPrograms[RS_GEOMETRY_PREPARE]->getId());
 
-                // Сброс атомарного счетчика треугольников в SSBO
-                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterBuffer);
-                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &INITIAL_ZERO);
-                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-
                 // Сменить идентификатор последного прохода
                 _lastRenderingStage = RS_GEOMETRY_PREPARE;
+
+                // Сброс общего атомарного счетчика треугольников
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterGlobalBuffer);
+                glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &INITIAL_ZERO);
+                glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
             }
+
+            // Сброс атомарного счетчика треугольников для текущего меша
+            glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterPerMeshBuffer);
+            glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 4 * _meshesCount, sizeof(GLuint), &INITIAL_ZERO);
+            glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
             // Передача матриц в шейдер
             glUniformMatrix4fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->view, 1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
@@ -383,6 +392,8 @@ namespace rtgl
             glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialMetallic, pMesh->material.metallic);
             glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialRoughness, pMesh->material.roughness);
 
+            // Передача информации об индексе текущего меша в шейдер
+            glUniform1ui(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->meshIndex, _meshesCount);
 
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(pMesh->geometry->getVaoId());
@@ -391,6 +402,14 @@ namespace rtgl
 
             // Ожидаем завершения работы с вершинами
             glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+
+            // Увеличение кол-ва мешей
+            _meshesCount++;
+
+            // Обновить количество мешей в буфере UBO
+            glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, 4, 4, &_meshesCount);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
         catch(std::exception& ex)
         {
@@ -455,9 +474,12 @@ namespace rtgl
 
             // Обнулить кол-во источников света
             _lightSourceCount = 0;
+            _meshesCount = 0;
+
             // Обнулить количество источников света в uniform-буфере
             glBindBuffer(GL_UNIFORM_BUFFER, _commonSettingsBuffer);
             glBufferSubData(GL_UNIFORM_BUFFER, 0, 4, &_lightSourceCount);
+            glBufferSubData(GL_UNIFORM_BUFFER, 4, 4, &_meshesCount);
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
         catch(std::exception& ex)
