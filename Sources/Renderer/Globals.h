@@ -19,9 +19,7 @@ namespace rtgl
     // Константа значение которой используется для обнуления буферов
     const unsigned INITIAL_ZERO = 0;
     // Максимальное кол-во треугольников, которые могут быть записаны в буфер на этапе подготовки геометрии
-    const unsigned MAX_TRIANGLES_PREPARE = 1000;
-    // Максимальное кол-во мешей, которые могут быть записаны в буфер на этапе подготовки геометрии
-    const unsigned MAX_MESHES_PREPARE = 1000;
+    const unsigned MAX_TRIANGLES_PREPARE = 10000;
     // Максимальное кол-во источников освещения (определяет размер UBO для структуры источника)
     const unsigned MAX_LIGHTS = 10;
 

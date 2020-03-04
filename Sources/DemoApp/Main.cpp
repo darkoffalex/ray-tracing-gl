@@ -98,12 +98,13 @@ int main(int argc, char* argv[])
         // Геометрия
         rtgl::HGeometryBuffer quadBuffer = rtgl::GenerateQuadGeometry(2.0f);
         rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
+        rtgl::HGeometryBuffer sphereBuffer = rtgl::GenerateSphereGeometry(16,0.5f);
 
         /** Рендерер - объекты сцены **/
 
         // Меши
         rtgl::HMesh mesh1 = rtgl::CreateMesh(quadBuffer,{0.0f, 0.0f, 0.0f},{-90.0f, 0.0f, 0.0f},{3.0f, 3.0f, 1.0f});
-        rtgl::HMesh mesh2 = rtgl::CreateMesh(cubeBuffer,{1.0f, 0.5f, 1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
+        rtgl::HMesh mesh2 = rtgl::CreateMesh(sphereBuffer,{1.0f, 0.5f, 1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
 
         // Геометрия
         rtgl::HMesh lightSource1 = rtgl::CreateLightSource({0.0f,2.0f,0.0f});

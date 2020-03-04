@@ -1,8 +1,6 @@
 #include "Controls.h"
 #include "Camera.h"
 
-#include <iostream>
-
 // Положение мыши
 static math::Vec2<int> _mousePositions;
 
@@ -23,8 +21,6 @@ extern Camera* _camera;
  */
 LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    bool rotatingCamera = false;
-
     switch (message)
     {
         case WM_DESTROY:

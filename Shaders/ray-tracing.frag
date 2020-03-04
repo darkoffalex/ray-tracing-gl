@@ -152,6 +152,46 @@ bool intersectsTriangle(Vertex[3] vertices, Ray ray, out vec3 intersectionPoint,
     return false;
 }
 
+// Функция пересечения треугольника и луча
+// Таинственный алгоритм Моллера - Трумбора, работаете быстрее обычного, но что тут происходит - лучше меня не спрашивайте
+bool intersectsTriangleMT(Vertex[3] vertices, Ray ray, out vec3 intersectionPoint, out float distance, out vec2 barycentric)
+{
+    // Два ребра треугольника
+    vec3 e1 = vertices[1].position - vertices[0].position;
+    vec3 e2 = vertices[2].position - vertices[0].position;
+
+    vec3 pvec = cross(ray.direction, e2);
+    float det = dot(e1, pvec);
+
+    if (det < 1e-8 && det > -1e-8) {
+        return false;
+    }
+
+    float inv_det = 1 / det;
+    vec3 tvec = ray.origin - vertices[0].position;
+    float u = dot(tvec, pvec) * inv_det;
+    if (u < 0 || u > 1) {
+        return false;
+    }
+
+    vec3 qvec = cross(tvec, e1);
+    float v = dot(ray.direction, qvec) * inv_det;
+    if (v < 0 || u + v > 1) {
+        return false;
+    }
+
+    distance = dot(e2, qvec) * inv_det;
+    if(distance < 0){
+        return false;
+    }
+
+    intersectionPoint = ray.origin + (normalize(ray.direction) * distance);
+    barycentric.x = v;
+    barycentric.y = u;
+
+    return true;
+}
+
 // Получить вектор направления исходящий из конкретного фрагмента с учетом угла обзора и пропорций экрана
 vec3 rayDirection(float fov, float aspectRatio, vec2 fragCoord)
 {
@@ -215,7 +255,7 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
         vec2 barycentric;
 
         // Если пересечение засчитано
-        if(intersectsTriangle(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+        if(intersectsTriangleMT(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
         {
             // Если расстояние до треугольника меньше расстояния до прежнего пересечния
             if(distance < minIntersectionDist)
@@ -231,6 +271,7 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
 
                 // Считать засчитанным
                 intersceted = true;
+
                 minIntersectionDist = distance;
             }
         }
@@ -266,7 +307,6 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
             finalyCalculatedColor = diffuse + specular;
         }
 
-        //vec3 finalyCalculatedColor = nearestIntersection.interpolated.color;
         resultColor += (finalyCalculatedColor * ray.weight);
     }
 
@@ -291,7 +331,9 @@ void main()
     // Проход по всем лучам
     for(uint i = 0; i < MAX_RAYS; i++)
     {
-        if(i < totalRays) castRay(rays[i], resultColor, rays, totalRays);
+        if(i < totalRays) {
+            castRay(rays[i], resultColor, rays, totalRays);
+        }
     }
 
     color = vec4(resultColor, 1.0f);
