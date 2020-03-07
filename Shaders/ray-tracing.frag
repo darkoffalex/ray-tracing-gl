@@ -60,6 +60,12 @@ struct LightSource
     uint type;
 };
 
+struct AABBox
+{
+    vec3 min;
+    vec3 max;
+};
+
 /*Uniform*/
 
 uniform vec3 _camPosition;
@@ -74,6 +80,14 @@ layout(std140, binding = 0) buffer triangleBuffer {
 };
 
 layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounterPerMesh[MAX_MESHES];
+
+layout(std140, binding = 5) buffer AABBoxMinBuffer {
+    ivec3 _meshBoundsMin[MAX_MESHES];
+};
+
+layout(std140, binding = 6) buffer AABBoxMaxBuffer {
+    ivec3 _meshBoundsMax[MAX_MESHES];
+};
 
 /*Uniform-буферы*/
 
@@ -95,6 +109,21 @@ in VS_OUT {
 } fs_in;
 
 /*Функции*/
+
+// Получить информацию о AABBox'е для конкретного меша
+AABBox getAABBoxForMesh(uint meshIndex)
+{
+    // Значения min-max в целочисленном виде из буфера bounding box'ов
+    ivec3 iMin = _meshBoundsMin[meshIndex];
+    ivec3 iMax = _meshBoundsMax[meshIndex];
+
+    AABBox box = AABBox(
+        vec3(float(iMin.x),float(iMin.y),float(iMin.z)) / 1000.0f,
+        vec3(float(iMax.x),float(iMax.y),float(iMax.z)) / 1000.0f
+    );
+
+    return box;
+}
 
 // Функция пересечения треугольника и луча
 bool intersectsTriangle(Vertex[3] vertices, Ray ray, out vec3 intersectionPoint, out float distance, out vec2 barycentric)
@@ -195,6 +224,63 @@ bool intersectsTriangleMT(Vertex[3] vertices, Ray ray, out vec3 intersectionPoin
     return true;
 }
 
+// Находится ли точка внутри axis-aligned bounding box
+bool insideAAABBox(vec3 p, AABBox box)
+{
+    return
+    p.x >= (box.min.x-0.001f) &&
+    p.y >= (box.min.y-0.001f) &&
+    p.z >= (box.min.z-0.001f) &&
+
+    p.x <= (box.max.x+0.001f) &&
+    p.y <= (box.max.y+0.001f) &&
+    p.z <= (box.max.z+0.001f);
+}
+
+// Пересекается ли луч с axis-aligned bounding box
+bool intersectsAABBox(Ray ray, AABBox box)
+{
+    // Засчитано ли пересечение
+    bool intersection = false;
+
+    // Проверяем не находится ли начало луча внутри коробки (если да - возвращаем true)
+    if(insideAAABBox(ray.origin,box)){
+        return true;
+    }
+
+    // Массив параметров t прямой луча для каждой плоскости параллелипипеда
+    float params[3];
+
+    // Выясняем какие первые 3 плоскости коробки попадутся лучу
+    if(ray.origin.x <= box.min.x) params[0] = ray.direction.x != 0.0f ? ((ray.origin.x - box.min.x) / -ray.direction.x) : 0.0f;
+    else params[0] = ray.direction.x != 0.0f ? ((box.max.x - ray.origin.x) / ray.direction.x) : 0.0f;
+
+    if(ray.origin.y <= box.min.y) params[1] = ray.direction.y != 0.0f ? ((ray.origin.y - box.min.y) / -ray.direction.y) : 0.0f;
+    else params[1] = ray.direction.y != 0.0f ? ((box.max.y - ray.origin.y) / ray.direction.y) : 0.0f;
+
+    if(ray.origin.z <= box.min.z) params[2] = ray.direction.z != 0.0f ? ((box.min.z - ray.origin.z) / ray.direction.z) : 0.0f;
+    else params[2] = ray.direction.z != 0.0f ? ((ray.origin.z - box.max.z) / -ray.direction.z) : 0.0f;
+
+    // Последнее расстояние до точки пересечения
+    float dist = 3.402823466e+38;
+
+    // Вычисляем точки для каждого параметра и смотрим какие принадлежат bounding box'у
+    for(uint i = 0; i < 3; i++)
+    {
+        float t = params[i];
+        if(t > 0.0f){
+            vec3 p = ray.origin + (ray.direction * t);
+
+            if(insideAAABBox(p,box) && t < dist){
+                dist = t;
+                intersection = true;
+            }
+        }
+    }
+
+    return intersection;
+}
+
 // Получить вектор направления исходящий из конкретного фрагмента с учетом угла обзора и пропорций экрана
 vec3 rayDirection(float fov, float aspectRatio, vec2 fragCoord)
 {
@@ -250,7 +336,12 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
     // Проход по всем мешам сцены
     for(uint m = 0; m < _totalMeshes; m++)
     {
-        //TODO: проверка на bounding box меша
+        // Проверка на bounding box меша
+        // Если луч не пересекает bounding box - пропускаем меш и все его треугольники
+        AABBox bounds = getAABBoxForMesh(m);
+        if(!intersectsAABBox(ray,bounds)){
+            continue;
+        }
 
         // Количество треугольников текущего меша
         uint triangleCount = atomicCounter(_triangleCounterPerMesh[m]);

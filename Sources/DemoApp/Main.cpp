@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
         // Геометрия
         rtgl::HGeometryBuffer quadBuffer = rtgl::GenerateQuadGeometry(2.0f);
-        rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
+        //rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
         rtgl::HGeometryBuffer sphereBuffer = rtgl::GenerateSphereGeometry(16,0.5f);
 
         /** Рендерер - объекты сцены **/

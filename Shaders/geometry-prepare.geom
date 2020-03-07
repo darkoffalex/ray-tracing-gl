@@ -42,7 +42,16 @@ layout(std140, binding = 0) buffer triangleBuffer {
 };
 
 layout(binding = 1, offset = 0) uniform atomic_uint _triangleCounterPerMesh[MAX_MESHES];
+
 layout(binding = 4, offset = 0) uniform atomic_uint _triangleCounterGlobal;
+
+layout(std140, binding = 5) buffer AABBoxMinBuffer {
+    ivec3 _meshBoundsMin[MAX_MESHES];
+};
+
+layout(std140, binding = 6) buffer AABBoxMaxBuffer {
+    ivec3 _meshBoundsMax[MAX_MESHES];
+};
 
 /*Вход*/
 
@@ -57,6 +66,30 @@ in VS_OUT
 } gs_in[];
 
 /*Функции*/
+
+// Нахождение AABBox'а при помощи атомарных операций
+void findBoundingBoxMinMax(vec3 position, uint meshIndex)
+{
+    // Вектор положения помноженный на 1000
+    vec3 fposMul = position * 1000.0f;
+
+    // Вектор в целочисленном виде
+    ivec3 ipos = ivec3(
+        int(fposMul.x),
+        int(fposMul.y),
+        int(fposMul.z)
+    );
+
+    // Минимальная точка
+    atomicMin(_meshBoundsMin[meshIndex].x,ipos.x);
+    atomicMin(_meshBoundsMin[meshIndex].y,ipos.y);
+    atomicMin(_meshBoundsMin[meshIndex].z,ipos.z);
+
+    // Максимальная точка
+    atomicMax(_meshBoundsMax[meshIndex].x,ipos.x);
+    atomicMax(_meshBoundsMax[meshIndex].y,ipos.y);
+    atomicMax(_meshBoundsMax[meshIndex].z,ipos.z);
+}
 
 // Основная функция геометрического шейдера
 // Вычисление TBN матрицы для карт нормалей и предача остальных данных в следующий этап
@@ -76,7 +109,11 @@ void main()
         triangle.vertices[i].color = gs_in[i].color;
         triangle.vertices[i].normal = gs_in[i].normal;
         triangle.vertices[i].uv = gs_in[i].uv;
+
+        // Построение bounding box'а для текущего меша
+        findBoundingBoxMinMax(triangle.vertices[i].position, _meshIndex);
     }
+
 
     // Увеличить кол-во треугольников для конкретного меша
     atomicCounterIncrement(_triangleCounterPerMesh[_meshIndex]);

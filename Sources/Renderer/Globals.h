@@ -16,8 +16,10 @@
 namespace rtgl
 {
     /** Константны **/
-    // Константа значение которой используется для обнуления буферов
+    // Константы значения которых используются для обнуления буферов
     const unsigned INITIAL_ZERO = 0;
+    const unsigned INITIAL_MAX_INT = INT_MAX;
+    const unsigned INITIAL_MIN_INT = INT_MIN;
     // Максимальное кол-во треугольников, которые могут быть записаны в буфер на этапе подготовки геометрии
     const unsigned MAX_TRIANGLES_PREPARE = 10000;
     // Максимальное кол-во источников освещения (определяет размер UBO для структуры источника)
@@ -65,6 +67,8 @@ namespace rtgl
     GLuint _triangleBuffer = 0;
     GLuint _triangleCounterPerMeshBuffer = 0;
     GLuint _triangleCounterGlobalBuffer = 0;
+    GLuint _meshBoundsMinBuffer = 0;
+    GLuint _meshBoundsMaxBuffer = 0;
 
     // Буферы UBO для передачи информации об источниках света и прочих настрйоках
     GLuint _lightSourcesBuffer = 0;

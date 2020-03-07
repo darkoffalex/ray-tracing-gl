@@ -108,6 +108,8 @@ namespace rtgl
                 GLuint triangleBufferBinding = 0;
                 GLuint triangleBufferCounterPerMeshBinding = 1;
                 GLuint triangleBufferCounterGlobalBinding = 4;
+                GLuint meshBoundsMinBufferBinding = 5;
+                GLuint meshBoundsMaxBufferBinding = 6;
 
                 // Создать SSBO для структур треугольников
                 // Данные записываются в буфер треугольников на этапе подготовки геометрии (RS_GEOMETRY_PREPARE)
@@ -133,6 +135,20 @@ namespace rtgl
                 glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &INITIAL_ZERO);
                 glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, triangleBufferCounterGlobalBinding, _triangleCounterGlobalBuffer);
                 glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+                // Буфер хранящий информацию о минимальной точке
+                glGenBuffers(1, &_meshBoundsMinBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, _meshBoundsMinBuffer);
+                glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLint) * 4 * MAX_MESHES, nullptr, GL_DYNAMIC_DRAW);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, meshBoundsMinBufferBinding, _meshBoundsMinBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+                // Атомарный счетчик для выяснения bounding box'ов каждого меша (максимальная точка)
+                glGenBuffers(1, &_meshBoundsMaxBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, _meshBoundsMaxBuffer);
+                glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLint) * 4 * MAX_MESHES, nullptr, GL_DYNAMIC_DRAW);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, meshBoundsMaxBufferBinding, _meshBoundsMaxBuffer);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
             }
 
             /// Инициализация UBO-буферов
@@ -214,8 +230,8 @@ namespace rtgl
         delete _screenFrameBuffer;
 
         // Уничтожение SSBO (Storage Buffer)
-        GLuint ssbo[3] = {_triangleBuffer, _triangleCounterPerMeshBuffer, _triangleCounterGlobalBuffer};
-        glDeleteBuffers(3, ssbo);
+        GLuint ssbo[5] = {_triangleBuffer, _triangleCounterPerMeshBuffer, _triangleCounterGlobalBuffer, _meshBoundsMinBuffer, _meshBoundsMaxBuffer};
+        glDeleteBuffers(5, ssbo);
 
         // Уничтожение UBO (Uniform Buffer)
         GLuint ubo[2] = {_lightSourcesBuffer, _commonSettingsBuffer};
@@ -380,8 +396,24 @@ namespace rtgl
 
             // Сброс атомарного счетчика треугольников для текущего меша
             glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, _triangleCounterPerMeshBuffer);
-            glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 4 * _meshesCount, sizeof(GLuint), &INITIAL_ZERO);
+            glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * _meshesCount, sizeof(GLuint), &INITIAL_ZERO);
             glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+            // Сброс минимальной точки меша
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, _meshBoundsMinBuffer);
+            for(unsigned i = 0; i < 3; i++) {
+                GLsizei offset = (sizeof(GLint) * 4 * _meshesCount) + (sizeof(GLint) * i);
+                glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, sizeof(GLint), &INITIAL_MAX_INT);
+            }
+            glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+            // Сброс максимальной точки меша
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, _meshBoundsMaxBuffer);
+            for(unsigned i = 0; i < 3; i++) {
+                GLsizei offset = (sizeof(GLint) * 4 * _meshesCount) + (sizeof(GLint) * i);
+                glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, sizeof(GLint), &INITIAL_MIN_INT);
+            }
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
             // Передача матриц в шейдер
             glUniformMatrix4fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->view, 1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
