@@ -12,7 +12,6 @@
 #include <GL/glew.h>
 #include <glm/gtc/type_ptr.inl>
 #include <stdexcept>
-#include <cstring>
 
 namespace rtgl
 {
@@ -497,7 +496,7 @@ namespace rtgl
             // Передать положение камеры
             glUniform3fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->camPosition, 1, glm::value_ptr(_camera->getPosition()));
             // Передать матрицу вида для преобразования положений источников света в пространство вида
-            glUniformMatrix4fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->view, 1, GL_FALSE, glm::value_ptr(_camera->getViewMatrix()));
+            glUniformMatrix4fv(_shaderPrograms[RS_RAY_TRACING]->getUniformLocations()->camModelMat, 1, GL_FALSE, glm::value_ptr(_camera->getModelMatrix()));
 
             // Привязать геометрию и нарисовать ее
             glBindVertexArray(_geometryQuad->getVaoId());

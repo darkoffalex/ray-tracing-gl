@@ -62,6 +62,7 @@ namespace rtgl
         this->locations_.aspectRatio = glGetUniformLocation(id_, "_aspectRatio");
         this->locations_.fov = glGetUniformLocation(id_, "_fov");
         this->locations_.camPosition = glGetUniformLocation(id_, "_camPosition");
+        this->locations_.camModelMat = glGetUniformLocation(id_,"_camModelMat");
 
         // Этап пост-процессинга
         this->locations_.screenTexture = glGetUniformLocation(id_, "_screenTexture");

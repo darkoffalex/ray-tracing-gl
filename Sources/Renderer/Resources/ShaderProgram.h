@@ -27,6 +27,7 @@ namespace rtgl
             GLuint aspectRatio = 0;
             GLuint fov = 0;
             GLuint camPosition = 0;
+            GLuint camModelMat = 0;
 
             // Этап пост-процессинга
             GLuint screenTexture;

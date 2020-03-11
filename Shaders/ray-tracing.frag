@@ -72,6 +72,7 @@ uniform vec3 _camPosition;
 uniform float _aspectRatio;
 uniform float _fov;
 uniform mat4 _view;
+uniform mat4 _camModelMat;
 
 /*SSBO-буферы*/
 
@@ -293,8 +294,11 @@ vec3 rayDirection(float fov, float aspectRatio, vec2 fragCoord)
         fragClipCoords.y * tan(radians(fov) / 2.0),
         -1.0);
 
+    // Вектор в пространстве мира
+    vec3 directionWorld = (_camModelMat * vec4(direction,0.0f)).xyz;
+
     // Вернуть нормализованный вектор
-    return normalize(direction);
+    return normalize(directionWorld);
 }
 
 // Получить интерполированные значения вершины
@@ -395,11 +399,8 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
             // Нормаль в точке пересечения
             vec3 normal = normalize(nearestIntersection.interpolated.normal);
 
-            // Положение источника в пространстве вида
-            vec3 lightPosView = (_view * vec4(_lightSources[i].position,1.0f)).xyz;
-
             // Направление от точки пересечения к источнику
-            vec3 toLight = normalize(lightPosView - nearestIntersection.position);
+            vec3 toLight = normalize(_lightSources[i].position - nearestIntersection.position);
 
             // Отраженный вектор падения света на точку пересечения
             vec3 reflected = reflect(-toLight, normal);
@@ -427,9 +428,12 @@ void main()
     vec3 resultColor = vec3(0.0f);
 
     // Изначальный набор лучей содержит только один луч начальный луч
-    // В процессе каста в случае н еобходимости набор может пополнятся лучами
+    // В процессе каста в случае необходимости набор может пополнятся лучами
     Ray rays[MAX_RAYS];
-    rays[0] = Ray(vec3(0.0f),rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
+    // Начало луча в пространстве мира
+    vec3 rayOriginWorld = (_camModelMat * vec4(0.0f,0.0f,0.0f,1.0f)).xyz;
+    // Создать луч
+    rays[0] = Ray(rayOriginWorld,rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
 
     // Всего лучей на данный момент
     uint totalRays = 1;
