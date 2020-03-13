@@ -449,7 +449,7 @@ vec3 castRay(Ray ray)
                 // Направление нового луча (отраженный вектор текущего луча)
                 vec3 reflectedDir = reflect(ray.direction,normal);
                 // Добавляем луч
-                _rays[_totalRays] = Ray(origin,reflectedDir,reflectionStrength*secondaryColorRatio);
+                _rays[_totalRays] = Ray(origin,reflectedDir,reflectionStrength*secondaryColorRatio*ray.weight);
                 _totalRays++;
             }
 
