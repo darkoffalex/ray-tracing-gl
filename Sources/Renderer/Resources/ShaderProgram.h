@@ -18,9 +18,14 @@ namespace rtgl
             GLuint model = 0;
             GLuint view = 0;
             GLuint projection = 0;
+
             GLuint materialAlbedo = 0;
             GLuint materialMetallic = 0;
             GLuint materialRoughness = 0;
+            GLuint materialPrimaryToSecondaryRatio = 0;
+            GLuint materialReflectToRefractRatio = 0;
+            GLuint materialRefractionCoff = 0;
+
             GLuint meshIndex = 0;
 
             // Этап трассировки

@@ -97,17 +97,26 @@ int main(int argc, char* argv[])
 
         // Геометрия
         rtgl::HGeometryBuffer quadBuffer = rtgl::GenerateQuadGeometry(2.0f);
-        //rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
-        rtgl::HGeometryBuffer sphereBuffer = rtgl::GenerateSphereGeometry(16,0.5f);
+        rtgl::HGeometryBuffer cubeBuffer = rtgl::GenerateCubeGeometry(1.0f);
+        //rtgl::HGeometryBuffer sphereBuffer = rtgl::GenerateSphereGeometry(16,0.5f);
 
         /** Рендерер - объекты сцены **/
 
         // Меши
         rtgl::HMesh mesh1 = rtgl::CreateMesh(quadBuffer,{0.0f, 0.0f, 0.0f},{-90.0f, 0.0f, 0.0f},{3.0f, 3.0f, 1.0f});
-        rtgl::HMesh mesh2 = rtgl::CreateMesh(sphereBuffer,{1.0f, 0.5f, 1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
+        rtgl::HMesh mesh2 = rtgl::CreateMesh(cubeBuffer,{1.0f, 0.5f, 1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
+        rtgl::HMesh mesh3 = rtgl::CreateMesh(cubeBuffer,{-1.0f, 0.5f, -1.0f},{0.0f, 0.0f, 0.0f},{1.0f, 1.0f, 1.0f});
 
-        // Геометрия
-        rtgl::HMesh lightSource1 = rtgl::CreateLightSource({0.0f,2.0f,0.0f});
+        rtgl::SetMeshMaterialSettings(mesh1,{1.0f,0.0f,0.0f},0.0f,1.0f);
+        rtgl::SetMeshMaterialSettings(mesh2,{0.0f,0.0f,1.0f},0.0f,1.0f,0.2f);
+        rtgl::SetMeshMaterialSettings(mesh3,{0.0f,0.0f,1.0f},0.0f,1.0f,0.5f);
+
+        // Источник света
+        rtgl::HMesh lightSource1 = rtgl::CreateLightSource(
+                {0.0f,2.0f,0.0f},
+                {0.0f,0.0f,0.0f},
+                rtgl::LIGHT_POINT,0.0f,
+                {0.8f,0.8f,0.8f});
 
         /** MAIN LOOP **/
 
@@ -116,6 +125,9 @@ int main(int argc, char* argv[])
 
         // Оконное сообщение
         MSG msg = {};
+
+        // Угол поворота объектов
+        float angle = 0.0f;
 
         // Запуск цикла
         while (true)
@@ -140,6 +152,9 @@ int main(int argc, char* argv[])
             }
 
             /// Обновление сцены
+            angle += 0.01f * _timer->getDelta();
+            rtgl::SetOrientation(mesh2, {0.0f,angle,0.0f});
+            rtgl::SetOrientation(mesh3, {0.0f,angle,0.0f});
 
             _camera->translate(_timer->getDelta());
 
@@ -153,6 +168,7 @@ int main(int argc, char* argv[])
             // Заполнения буфера геометрии сцены
             rtgl::SetMesh(mesh1);
             rtgl::SetMesh(mesh2);
+            rtgl::SetMesh(mesh3);
             rtgl::SetLightSource(lightSource1);
 
             // Трасировка сцены

@@ -27,6 +27,9 @@ struct Triangle
     vec3 albedo;
     float metallic;
     float roughness;
+    float primaryCoff;
+    float reflectToRefract;
+    float refractionCoff;
 };
 
 struct Ray
@@ -44,6 +47,7 @@ struct NearestIntersectionInfo
     float roughness;
     float primaryToSecondaryRatio;
     float reflectToRefractRatio;
+    float refractionCoff;
     Vertex interpolated;
 };
 
@@ -108,6 +112,13 @@ layout (std140, binding = 3) uniform commonSettings
 in VS_OUT {
     vec2 uv;
 } fs_in;
+
+/*Глобальные переменные*/
+
+// Набор лучей
+Ray _rays[MAX_RAYS];
+// Всего лучей
+uint _totalRays = 0;
 
 /*Функции*/
 
@@ -323,10 +334,13 @@ Vertex interpolatedVertex(Vertex[3] vertices, vec2 barycentric)
 }
 
 // Основная функция каста луча
-bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint totalRays)
+vec3 castRay(Ray ray)
 {
     // Засчитано ли пересечение треугольником
     bool intersceted = false;
+
+    // Результирующий цвет каста данного луча
+    vec3 resultColor = vec3(0.0f,0.0f,0.0f);
 
     // Минимальное расстояение до пересечения изначально "бесконечно" велико
     float minIntersectionDist = 3.402823466e+38;
@@ -340,45 +354,46 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
     // Проход по всем мешам сцены
     for(uint m = 0; m < _totalMeshes; m++)
     {
-        // Проверка на bounding box меша
-        // Если луч не пересекает bounding box - пропускаем меш и все его треугольники
-        AABBox bounds = getAABBoxForMesh(m);
-        if(!intersectsAABBox(ray,bounds)){
-            continue;
-        }
-
         // Количество треугольников текущего меша
         uint triangleCount = atomicCounter(_triangleCounterPerMesh[m]);
 
-        // Проход по всем треугольникам меша
-        for(uint i = triangleOffset; i < triangleOffset + triangleCount; i++)
+        // Получаем bounding box группы треугольников
+        AABBox bounds = getAABBoxForMesh(m);
+
+        // Если луч пересекает bounding box - перебираем треугольники группы
+        if(intersectsAABBox(ray,bounds))
         {
-            // Точка пересечения в (в пространстве наблюдателя)
-            vec3 intersectionPoint;
-            // Дистанция до точки пересечения
-            float distance;
-            // Барицентрические координаты треугольника (для интреполяции)
-            vec2 barycentric;
-
-            // Если пересечение засчитано
-            if(intersectsTriangleMT(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
+            // Проход по всем треугольникам меша
+            for(uint i = triangleOffset; i < triangleOffset + triangleCount; i++)
             {
-                // Если расстояние до треугольника меньше расстояния до прежнего пересечния
-                if(distance < minIntersectionDist)
+                // Точка пересечения в (в пространстве наблюдателя)
+                vec3 intersectionPoint;
+                // Дистанция до точки пересечения
+                float distance;
+                // Барицентрические координаты треугольника (для интреполяции)
+                vec2 barycentric;
+
+                // Если пересечение засчитано
+                if(intersectsTriangleMT(_triangles[i].vertices,ray,intersectionPoint,distance,barycentric))
                 {
-                    // Информация о пересечениии
-                    nearestIntersection.position = intersectionPoint;
-                    nearestIntersection.albedo = _triangles[i].albedo;
-                    nearestIntersection.metallic = _triangles[i].metallic;
-                    nearestIntersection.roughness = _triangles[i].roughness;
-                    nearestIntersection.primaryToSecondaryRatio = 1.0f;
-                    nearestIntersection.reflectToRefractRatio = 1.0f;
-                    nearestIntersection.interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
+                    // Если расстояние до треугольника меньше расстояния до прежнего пересечния
+                    if(distance < minIntersectionDist)
+                    {
+                        // Информация о пересечениии
+                        nearestIntersection.position = intersectionPoint;
+                        nearestIntersection.albedo = _triangles[i].albedo;
+                        nearestIntersection.metallic = _triangles[i].metallic;
+                        nearestIntersection.roughness = _triangles[i].roughness;
+                        nearestIntersection.primaryToSecondaryRatio = _triangles[i].primaryCoff;
+                        nearestIntersection.reflectToRefractRatio = _triangles[i].reflectToRefract;
+                        nearestIntersection.refractionCoff = _triangles[i].refractionCoff;
+                        nearestIntersection.interpolated = interpolatedVertex(_triangles[i].vertices,barycentric);
 
-                    // Считать засчитанным
-                    intersceted = true;
+                        // Считать засчитанным
+                        intersceted = true;
 
-                    minIntersectionDist = distance;
+                        minIntersectionDist = distance;
+                    }
                 }
             }
         }
@@ -393,12 +408,15 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
         // Собственный цвет поверхности
         vec3 finalyCalculatedColor = vec3(0.0f);
 
+        // Нормаль в точке пересечения
+        vec3 normal = normalize(nearestIntersection.interpolated.normal);
+
+        // Сила базового цвета
+        float baseColorStrength = nearestIntersection.primaryToSecondaryRatio;
+
         // Пройтись по источникам света
         for(uint i = 0; i < _totalLights; i++)
         {
-            // Нормаль в точке пересечения
-            vec3 normal = normalize(nearestIntersection.interpolated.normal);
-
             // Направление от точки пересечения к источнику
             vec3 toLight = normalize(_lightSources[i].position - nearestIntersection.position);
 
@@ -411,13 +429,40 @@ bool castRay(Ray ray, out vec3 resultColor, out Ray rays[MAX_RAYS], out uint tot
             vec3 specular = vec3(1.0f,1.0f,1.0f) * pow(max(dot(-reflected, ray.direction),0.0f),32.0f);
 
             // Итоговый цвет
-            finalyCalculatedColor = diffuse + specular;
+            finalyCalculatedColor = (diffuse + specular) * baseColorStrength;
         }
 
-        resultColor += (finalyCalculatedColor * ray.weight);
+        // Дополнительные лучи (преломления и отражения)
+        if(baseColorStrength < 1.0f)
+        {
+            // Сила второстепенного компонента (отраженный или преломленный)
+            float secondaryColorRatio = 1.0f - baseColorStrength;
+            // Сила отраженной компоненты
+            float reflectionStrength = nearestIntersection.reflectToRefractRatio;
+            // Сила преломленной компоненты
+            float refractionStrength = 1.0f - reflectionStrength;
+
+            // Если поверхность отражает
+            if(reflectionStrength > 0.0f){
+                // Положение чуть сдвигаем по нормали (чтобы луч не пересекся с поверзностью отражения)
+                vec3 origin = nearestIntersection.position + (normal * 1e-3);
+                // Направление нового луча (отраженный вектор текущего луча)
+                vec3 reflectedDir = reflect(ray.direction,normal);
+                // Добавляем луч
+                _rays[_totalRays] = Ray(origin,reflectedDir,reflectionStrength*secondaryColorRatio);
+                _totalRays++;
+            }
+
+            // Если поверхность преломляет
+            if(refractionStrength > 0.0f){
+                //TODO: добавить преломленный луч
+            }
+        }
+
+        resultColor = finalyCalculatedColor * ray.weight;
     }
 
-    return intersceted;
+    return resultColor;
 }
 
 // Основная функция фрагментного шейдера
@@ -427,22 +472,19 @@ void main()
     // Результирующий цвет
     vec3 resultColor = vec3(0.0f);
 
-    // Изначальный набор лучей содержит только один луч начальный луч
-    // В процессе каста в случае необходимости набор может пополнятся лучами
-    Ray rays[MAX_RAYS];
+
     // Начало луча в пространстве мира
     vec3 rayOriginWorld = (_camModelMat * vec4(0.0f,0.0f,0.0f,1.0f)).xyz;
-    // Создать луч
-    rays[0] = Ray(rayOriginWorld,rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
-
+    // Добавить старотвоый луч в набор
+    _rays[0] = Ray(rayOriginWorld,rayDirection(_fov,_aspectRatio,fs_in.uv),1.0f);
     // Всего лучей на данный момент
-    uint totalRays = 1;
+    _totalRays = 1;
 
     // Проход по всем лучам
     for(uint i = 0; i < MAX_RAYS; i++)
     {
-        if(i < totalRays) {
-            castRay(rays[i], resultColor, rays, totalRays);
+        if(i < _totalRays) {
+            resultColor += castRay(_rays[i]);
         }
     }
 

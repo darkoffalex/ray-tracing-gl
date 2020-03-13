@@ -81,9 +81,18 @@ namespace rtgl
      * @param albedo Альбедо-цвет (аналог diffuse)
      * @param metallic Металличность
      * @param roughness Шероховатость
+     * @param primaryCoff Соотношение собственного цвета к отражению/преломлению
+     * @param reflectionToRefraction Соотношение отраженного к преломленному компоненту
+     * @param refractionCoff Коэфициент преломления
      * @return Состояние операции
      */
-    bool __cdecl SetMeshMaterialSettings(HMesh mesh, const Vec3<float> &albedo, const float &metallic, const float &roughness)
+    bool __cdecl SetMeshMaterialSettings(HMesh mesh,
+            const Vec3<float> &albedo,
+            const float &metallic,
+            const float &roughness,
+            const float& primaryCoff,
+            const float& reflectionToRefraction,
+            const float& refractionCoff)
     {
         try
         {
@@ -93,6 +102,9 @@ namespace rtgl
             pMesh->material.albedo = {albedo.r,albedo.g,albedo.b};
             pMesh->material.metallic = metallic;
             pMesh->material.roughness = roughness;
+            pMesh->material.primaryToSecondary = primaryCoff;
+            pMesh->material.reflectionToRefraction = reflectionToRefraction;
+            pMesh->material.refractionCoff = refractionCoff;
         }
         catch(std::exception& ex)
         {

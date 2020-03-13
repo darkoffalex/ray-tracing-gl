@@ -26,14 +26,19 @@ struct Triangle
     vec3 albedo;
     float metallic;
     float roughness;
+    float primaryCoff;
+    float reflectToRefract;
+    float refractionCoff;
 };
 
 /*Uniform*/
-
+uniform uint _meshIndex;                           // Индекс текущего меша
 uniform vec3 _materialAlbedo;                      // Альбедо-цвет материала
 uniform float _materialMetallic;                   // Металличность материала
 uniform float _materialRoughness;                  // Шероховатость материала
-uniform uint _meshIndex;                           // Индекс текущего меша
+uniform float _materialPrimaryToSecondaryRatio;    // Отношение собственного цвета к отраженному или преломленному
+uniform float _materialReflectToRefractRatio;      // Отношение отраженной компоненты к преломленной
+uniform float _materialRefractionCoff;             // Коэфициент преломления (если материал преломляет)
 
 /*SSBO-буферы*/
 
@@ -100,6 +105,9 @@ void main()
     triangle.albedo = _materialAlbedo;
     triangle.metallic = _materialMetallic;
     triangle.roughness = _materialRoughness;
+    triangle.primaryCoff = _materialPrimaryToSecondaryRatio;
+    triangle.reflectToRefract = _materialReflectToRefractRatio;
+    triangle.refractionCoff = _materialRefractionCoff;
 
     // Пройтись по всем вершинам
     for(int i = 0; i < gl_in.length(); i++)

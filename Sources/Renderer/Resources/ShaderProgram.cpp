@@ -56,6 +56,9 @@ namespace rtgl
         this->locations_.materialAlbedo = glGetUniformLocation(id_, "_materialAlbedo");
         this->locations_.materialMetallic = glGetUniformLocation(id_, "_materialMetallic");
         this->locations_.materialRoughness = glGetUniformLocation(id_, "_materialRoughness");
+        this->locations_.materialPrimaryToSecondaryRatio = glGetUniformLocation(id_, "_materialPrimaryToSecondaryRatio");
+        this->locations_.materialReflectToRefractRatio = glGetUniformLocation(id_, "_materialReflectToRefractRatio");
+        this->locations_.materialRefractionCoff = glGetUniformLocation(id_, "_materialRefractionCoff");
         this->locations_.meshIndex = glGetUniformLocation(id_,"_meshIndex");
 
         // Этап трассировки

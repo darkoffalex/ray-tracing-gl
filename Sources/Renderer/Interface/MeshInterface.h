@@ -39,11 +39,17 @@ namespace rtgl
          * @param albedo Альбедо-цвет (аналог diffuse)
          * @param metallic Металличность
          * @param roughness Шероховатость
+         * @param primaryCoff Соотношение собственного цвета к отражению/преломлению
+         * @param reflectionToRefraction Соотношение отраженного к преломленному компоненту
+         * @param refractionCoff Коэфициент преломления
          * @return Состояние операции
          */
         RENDERER_LIB_API bool __cdecl SetMeshMaterialSettings(HMesh mesh,
                 const Vec3<float>& albedo,
                 const float& metallic,
-                const float& roughness);
+                const float& roughness,
+                const float& primaryCoff = 1.0f,
+                const float& reflectionToRefraction = 1.0f,
+                const float& refractionCoff = 0.6f);
     }
 }

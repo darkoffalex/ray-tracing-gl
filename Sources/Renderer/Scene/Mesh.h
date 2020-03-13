@@ -22,6 +22,9 @@ namespace rtgl
             glm::vec3 albedo = { 1.0f,1.0f,1.0f };
             GLfloat metallic = 0.0f;
             GLfloat roughness = 1.0f;
+            GLfloat primaryToSecondary = 1.0f;
+            GLfloat reflectionToRefraction = 1.0f;
+            GLfloat refractionCoff = 0.6f;
         };
 
     public:

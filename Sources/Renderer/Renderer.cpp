@@ -422,6 +422,9 @@ namespace rtgl
             glUniform3fv(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialAlbedo, 1, glm::value_ptr(pMesh->material.albedo));
             glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialMetallic, pMesh->material.metallic);
             glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialRoughness, pMesh->material.roughness);
+            glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialPrimaryToSecondaryRatio, pMesh->material.primaryToSecondary);
+            glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialReflectToRefractRatio, pMesh->material.reflectionToRefraction);
+            glUniform1f(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->materialRefractionCoff, pMesh->material.refractionCoff);
 
             // Передача информации об индексе текущего меша в шейдер
             glUniform1ui(_shaderPrograms[RS_GEOMETRY_PREPARE]->getUniformLocations()->meshIndex, _meshesCount);
